@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://butt4136f6ku"]
+
+[ext_resource type="Script" uid="uid://n4muwqsw2sdr" path="res://fps_arena_plus.gd" id="1_fps"]
+
+[node name="FPSArena" type="CharacterBody3D" unique_id=58504882]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, -0.3296013)
+script = ExtResource("1_fps")

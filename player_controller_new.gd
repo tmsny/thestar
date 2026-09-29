@@ -1,0 +1,217 @@
+extends CharacterBody3D
+
+const SPEED: float = 7.0
+const JUMP_VELOCITY: float = 5.0
+const SENSITIVITY: float = 0.002
+const WEAPON_NAMES: Array[String] = ["PISTOLE", "STURMGEWEHR", "SCHROTFLINTE"]
+const CLIPS: Array[int] = [12, 30, 6]
+const FIRE_DELAYS: Array[float] = [0.32, 0.095, 0.75]
+const RELOAD_DURATIONS: Array[float] = [1.2, 1.65, 2.0]
+const WEAPON_TEXTURES: Array[Texture2D] = [preload("res://assets/generated/viewmodel_pistol.png"), preload("res://assets/generated/viewmodel_rifle.png"), preload("res://assets/generated/viewmodel_shotgun.png")]
+const HUD_SCENE: PackedScene = preload("res://hud.tscn")
+
+@onready var camera: Camera3D = $Camera3D
+
+var health: int = 100
+var score: int = 0
+var weapon_index: int = 0
+var ammo: Array[int] = [12, 30, 6]
+var shot_cooldown: float = 0.0
+var reload_timer: float = 0.0
+var pitch: float = 0.0
+var hud: Control
+var weapon_view: TextureRect
+var muzzle_flash: ColorRect
+var hit_marker: Label
+var recoil: float = 0.0
+var bob_time: float = 0.0
+var hud_layer: CanvasLayer
+const TRACER_SCENE: Script = preload("res://weapon_effects.gd")
+
+func _ready() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	hud_layer = CanvasLayer.new()
+	add_child(hud_layer)
+	hud = HUD_SCENE.instantiate() as Control
+	hud_layer.add_child(hud)
+	_build_weapon_view()
+	_build_feedback()
+	_update_hud()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		rotate_y(-event.relative.x * SENSITIVITY)
+		pitch = clampf(pitch - event.relative.y * SENSITIVITY, -1.35, 1.35)
+		camera.rotation.x = pitch
+	elif event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			shoot()
+		elif event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			select_weapon(posmod(weapon_index - 1, WEAPON_NAMES.size()))
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			select_weapon((weapon_index + 1) % WEAPON_NAMES.size())
+	elif event is InputEventKey and event.pressed and not event.echo:
+		match event.keycode:
+			KEY_ESCAPE:
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
+			KEY_1: select_weapon(0)
+			KEY_2: select_weapon(1)
+			KEY_3: select_weapon(2)
+			KEY_R: reload_weapon()
+			KEY_SPACE:
+				if health <= 0:
+					get_tree().reload_current_scene()
+
+func _physics_process(delta: float) -> void:
+	if health <= 0:
+		return
+	if not is_on_floor():
+		velocity.y -= 18.0 * delta
+	if Input.is_key_pressed(KEY_SPACE) and is_on_floor():
+		velocity.y = JUMP_VELOCITY
+	var move_input: Vector2 = Vector2.ZERO
+	move_input.x = float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A))
+	move_input.y = float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
+	move_input = move_input.normalized()
+	var direction: Vector3 = (transform.basis * Vector3(move_input.x, 0.0, move_input.y)).normalized()
+	velocity.x = direction.x * SPEED
+	velocity.z = direction.z * SPEED
+	move_and_slide()
+	shot_cooldown = maxf(0.0, shot_cooldown - delta)
+	recoil = move_toward(recoil, 0.0, delta * 2.3)
+	if Vector2(velocity.x, velocity.z).length() > 0.2:
+		bob_time += delta * 9.0
+	else:
+		bob_time = 0.0
+	if reload_timer > 0.0:
+		reload_timer = maxf(0.0, reload_timer - delta)
+		if reload_timer == 0.0:
+			ammo[weapon_index] = CLIPS[weapon_index]
+		_update_hud()
+	_update_weapon_pose()
+
+func shoot() -> void:
+	if health <= 0 or Input.mouse_mode != Input.MOUSE_MODE_CAPTURED or shot_cooldown > 0.0 or reload_timer > 0.0:
+		return
+	if ammo[weapon_index] <= 0:
+		reload_weapon()
+		return
+	ammo[weapon_index] -= 1
+	shot_cooldown = FIRE_DELAYS[weapon_index]
+	recoil = 1.0
+	_show_muzzle_flash()
+	var pellet_count: int = 7 if weapon_index == 2 else 1
+	var did_hit: bool = false
+	for pellet_index: int in range(pellet_count):
+		var spread: Vector2 = Vector2.ZERO
+		if pellet_count > 1:
+			spread = Vector2(randf_range(-0.045, 0.045), randf_range(-0.045, 0.045))
+		var ray_direction: Vector3 = -camera.global_basis.z + camera.global_basis.x * spread.x + camera.global_basis.y * spread.y
+		var start: Vector3 = camera.global_position
+		var end: Vector3 = start + ray_direction.normalized() * 100.0
+		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start, end)
+		query.exclude = [get_rid()]
+		var result: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+		var tracer_end: Vector3 = end
+		if not result.is_empty():
+			tracer_end = result["position"]
+			var collider: Object = result["collider"]
+			if collider is Node and collider.is_in_group("targets"):
+				collider.queue_free()
+				score += 1
+				did_hit = true
+		_spawn_tracer(start, tracer_end)
+	if did_hit:
+		_show_hit_marker()
+	_update_hud()
+
+func select_weapon(index: int) -> void:
+	if index < 0 or index >= WEAPON_NAMES.size():
+		return
+	weapon_index = index
+	reload_timer = 0.0
+	weapon_view.texture = WEAPON_TEXTURES[weapon_index]
+	_update_hud()
+
+func reload_weapon() -> void:
+	if reload_timer > 0.0 or ammo[weapon_index] >= CLIPS[weapon_index]:
+		return
+	reload_timer = RELOAD_DURATIONS[weapon_index]
+	_update_hud()
+
+func _build_weapon_view() -> void:
+	weapon_view = TextureRect.new()
+	weapon_view.texture = WEAPON_TEXTURES[weapon_index]
+	weapon_view.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	weapon_view.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	weapon_view.anchor_left = 1.0
+	weapon_view.anchor_top = 1.0
+	weapon_view.anchor_right = 1.0
+	weapon_view.anchor_bottom = 1.0
+	weapon_view.offset_left = -460.0
+	weapon_view.offset_top = -360.0
+	weapon_view.offset_right = -12.0
+	weapon_view.offset_bottom = -10.0
+	weapon_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	weapon_view.modulate = Color(1.0, 1.0, 1.0, 0.96)
+	hud.add_child(weapon_view)
+
+func _update_weapon_pose() -> void:
+	if weapon_view == null:
+		return
+	weapon_view.position.y = recoil * 30.0 + sin(bob_time) * 5.0
+	weapon_view.position.x = cos(bob_time * 0.5) * 3.0 if bob_time > 0.0 else 0.0
+
+func _build_feedback() -> void:
+	muzzle_flash = ColorRect.new()
+	muzzle_flash.color = Color(1.0, 0.68, 0.2, 0.94)
+	muzzle_flash.anchor_left = 1.0
+	muzzle_flash.anchor_top = 1.0
+	muzzle_flash.anchor_right = 1.0
+	muzzle_flash.anchor_bottom = 1.0
+	muzzle_flash.offset_left = -175.0
+	muzzle_flash.offset_top = -255.0
+	muzzle_flash.offset_right = -105.0
+	muzzle_flash.offset_bottom = -185.0
+	muzzle_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	muzzle_flash.visible = false
+	hud.add_child(muzzle_flash)
+	hit_marker = Label.new()
+	hit_marker.text = "×"
+	hit_marker.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	hit_marker.position = Vector2(-9.0, -22.0)
+	hit_marker.add_theme_font_size_override("font_size", 24)
+	hit_marker.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+	hit_marker.visible = false
+	hud.add_child(hit_marker)
+
+func _show_muzzle_flash() -> void:
+	muzzle_flash.visible = true
+	muzzle_flash.modulate.a = 1.0
+	var flash_tween: Tween = create_tween()
+	flash_tween.tween_property(muzzle_flash, "modulate:a", 0.0, 0.09)
+	flash_tween.tween_callback(func() -> void: muzzle_flash.visible = false)
+
+func _show_hit_marker() -> void:
+	hit_marker.visible = true
+	hit_marker.modulate.a = 1.0
+	var marker_tween: Tween = create_tween()
+	marker_tween.tween_property(hit_marker, "modulate:a", 0.0, 0.35)
+	marker_tween.tween_callback(func() -> void: hit_marker.visible = false)
+
+func _spawn_tracer(start: Vector3, finish: Vector3) -> void:
+	if start.distance_to(finish) < 0.1:
+		return
+	var tracer: Node3D = Node3D.new()
+	tracer.set_script(TRACER_SCENE)
+	add_child(tracer)
+	tracer.call("set_segment", start, finish)
+
+func _update_hud() -> void:
+	if hud == null:
+		return
+	var ammo_count: int = ammo[weapon_index]
+	var clip_size: int = CLIPS[weapon_index]
+	var is_reloading: bool = reload_timer > 0.0
+	hud.call("update_hud", health, WEAPON_NAMES[weapon_index], ammo_count, clip_size, score, is_reloading)
+	hud.call("set_status", "NACHLADEN…" if is_reloading else "")

@@ -1,0 +1,174 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://hud_pro.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="glass_panel"]
+bg_color = Color(0.018, 0.028, 0.04, 0.78)
+border_color = Color(0.15, 0.72, 0.68, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="bar_fill"]
+bg_color = Color(0.18, 0.82, 0.66, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="Vitals" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("glass_panel")
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 22.0
+offset_top = 22.0
+offset_right = 310.0
+offset_bottom = 122.0
+
+[node name="VitalsMargin" type="MarginContainer" parent="Vitals"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 9
+
+[node name="VitalsColumn" type="VBoxContainer" parent="Vitals/VitalsMargin"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="VitalsTitle" type="Label" parent="Vitals/VitalsMargin/VitalsColumn"]
+layout_mode = 2
+text = "VITALS"
+theme_override_colors/font_color = Color(0.46, 0.84, 0.78, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="HealthBar" type="ProgressBar" parent="Vitals/VitalsMargin/VitalsColumn"]
+custom_minimum_size = Vector2(240, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/fill = SubResource("bar_fill")
+theme_override_styles/background = SubResource("glass_panel")
+max_value = 100.0
+show_percentage = false
+
+[node name="HealthNumber" type="Label" parent="Vitals/VitalsMargin/VitalsColumn"]
+layout_mode = 2
+text = "100"
+theme_override_colors/font_color = Color(0.96, 0.97, 0.91, 1)
+theme_override_font_sizes/font_size = 19
+
+[node name="ScorePanel" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("glass_panel")
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -172.0
+offset_top = 22.0
+offset_right = -22.0
+offset_bottom = 82.0
+grow_horizontal = 0
+
+[node name="ScoreMargin" type="MarginContainer" parent="ScorePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 6
+
+[node name="ScoreColumn" type="VBoxContainer" parent="ScorePanel/ScoreMargin"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="ScoreCaption" type="Label" parent="ScorePanel/ScoreMargin/ScoreColumn"]
+layout_mode = 2
+text = "HITS"
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.88, 0.68, 0.31, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="ScoreNumber" type="Label" parent="ScorePanel/ScoreMargin/ScoreColumn"]
+layout_mode = 2
+text = "000"
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.97, 0.97, 0.92, 1)
+theme_override_font_sizes/font_size = 20
+
+[node name="WeaponPanel" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("glass_panel")
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 22.0
+offset_top = -112.0
+offset_right = 286.0
+offset_bottom = -22.0
+
+[node name="WeaponMargin" type="MarginContainer" parent="WeaponPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 9
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 9
+
+[node name="WeaponColumn" type="VBoxContainer" parent="WeaponPanel/WeaponMargin"]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="WeaponName" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn"]
+layout_mode = 2
+text = "PISTOLE"
+theme_override_colors/font_color = Color(0.46, 0.84, 0.78, 1)
+theme_override_font_sizes/font_size = 12
+
+[node name="AmmoNumber" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn"]
+layout_mode = 2
+text = "12 / 12"
+theme_override_colors/font_color = Color(0.97, 0.97, 0.92, 1)
+theme_override_font_sizes/font_size = 27
+
+[node name="ReloadLabel" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn"]
+visible = false
+layout_mode = 2
+text = "RELOADING"
+theme_override_colors/font_color = Color(1, 0.71, 0.27, 1)
+theme_override_font_sizes/font_size = 11
+
+[node name="Controls" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 300.0
+offset_top = -38.0
+offset_right = -300.0
+horizontal_alignment = 1
+text = "WASD  MOVE     SPACE  JUMP     LMB  FIRE     1–3  WEAPONS     R  RELOAD"
+theme_override_colors/font_color = Color(0.82, 0.87, 0.88, 0.85)
+theme_override_font_sizes/font_size = 12

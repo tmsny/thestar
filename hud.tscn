@@ -1,0 +1,140 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://hud.gd" id="1_hud"]
+
+[sub_resource type="StyleBoxFlat" id="panel_dark"]
+bg_color = Color(0.025, 0.045, 0.065, 0.88)
+border_color = Color(0.12, 0.78, 0.72, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="HUD" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="TopPanel" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("panel_dark")
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 18.0
+offset_right = -20.0
+offset_bottom = 110.0
+grow_horizontal = 2
+
+[node name="Margin" type="MarginContainer" parent="TopPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 10
+
+[node name="TopRow" type="HBoxContainer" parent="TopPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 28
+
+[node name="HealthRow" type="VBoxContainer" parent="TopPanel/Margin/TopRow"]
+custom_minimum_size = Vector2(290, 0)
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HealthLabel" type="Label" parent="TopPanel/Margin/TopRow/HealthRow"]
+layout_mode = 2
+text = "VITALS"
+theme_override_colors/font_color = Color(0.47, 0.9, 0.83, 1)
+theme_override_font_sizes/font_size = 13
+
+[node name="HealthBar" type="ProgressBar" parent="TopPanel/Margin/TopRow/HealthRow"]
+custom_minimum_size = Vector2(260, 18)
+layout_mode = 2
+max_value = 100.0
+show_percentage = false
+
+[node name="HealthText" type="Label" parent="TopPanel/Margin/TopRow/HealthRow"]
+layout_mode = 2
+text = "100 / 100"
+theme_override_colors/font_color = Color(0.94, 0.97, 0.95, 1)
+theme_override_font_sizes/font_size = 17
+
+[node name="ScoreText" type="Label" parent="TopPanel/Margin/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "TREFFER   000"
+horizontal_alignment = 2
+vertical_alignment = 1
+theme_override_colors/font_color = Color(0.95, 0.75, 0.28, 1)
+theme_override_font_sizes/font_size = 21
+
+[node name="AmmoPanel" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("panel_dark")
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -330.0
+offset_top = -132.0
+offset_right = -22.0
+offset_bottom = -22.0
+
+[node name="AmmoMargin" type="MarginContainer" parent="AmmoPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 12
+
+[node name="AmmoColumn" type="VBoxContainer" parent="AmmoPanel/AmmoMargin"]
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="WeaponName" type="Label" parent="AmmoPanel/AmmoMargin/AmmoColumn"]
+layout_mode = 2
+text = "PISTOLE"
+theme_override_colors/font_color = Color(0.47, 0.9, 0.83, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="AmmoText" type="Label" parent="AmmoPanel/AmmoMargin/AmmoColumn"]
+layout_mode = 2
+text = "12 / 12"
+theme_override_colors/font_color = Color(0.98, 0.98, 0.91, 1)
+theme_override_font_sizes/font_size = 32
+
+[node name="StatusText" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 125.0
+offset_bottom = 175.0
+grow_horizontal = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(1, 0.72, 0.27, 1)
+theme_override_font_sizes/font_size = 20
+
+[node name="Controls" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -38.0
+offset_right = -20.0
+horizontal_alignment = 2
+text = "WASD MOVE     SPACE JUMP     MOUSE AIM     LMB FIRE     1 / 2 / 3 WEAPONS     R RELOAD     ESC RELEASE MOUSE"
+theme_override_colors/font_color = Color(0.78, 0.85, 0.87, 1)
+theme_override_font_sizes/font_size = 13
