@@ -29,15 +29,32 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var center: Vector2 = size * 0.5
-	var aim_color: Color = Color(0.95, 0.98, 0.93, 0.9)
+	# Dunkle Outline sorgt fuer Kontrast auf jedem Hintergrund.
+	var outline: Color = Color(0.02, 0.03, 0.05, 0.55)
+	# Helles, leicht ins Teal getoentes Kreuz passend zum HUD.
+	var aim_color: Color = Color(0.94, 0.99, 0.96, 0.95)
+	var accent: Color = Color(0.34, 0.9, 0.82, 1.0)
 	var g: float = 6.0
-	var l: float = 8.0
+	var l: float = 9.0
+	var w: float = 2.0
 	if hit_flash > 0.0:
-		aim_color = Color(1.0, 0.36, 0.18, 1.0)
-		g = 2.0
+		aim_color = Color(1.0, 0.42, 0.22, 1.0)
+		accent = Color(1.0, 0.72, 0.32, 1.0)
+		outline = Color(0.25, 0.06, 0.02, 0.6)
+		g = 3.0
 		l = 13.0
-	draw_line(center + Vector2(-g-l, 0), center + Vector2(-g, 0), aim_color, 2.0, true)
-	draw_line(center + Vector2(g, 0), center + Vector2(g+l, 0), aim_color, 2.0, true)
-	draw_line(center + Vector2(0, -g-l), center + Vector2(0, -g), aim_color, 2.0, true)
-	draw_line(center + Vector2(0, g), center + Vector2(0, g+l), aim_color, 2.0, true)
-	draw_circle(center, 1.5, Color(0.98, 0.6, 0.18))
+		w = 2.5
+	var arms: Array[Vector2] = [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]
+	# Erste Schicht: Outline, damit die Arme auch auf hellen Flaechen lesbar sind.
+	for dir: Vector2 in arms:
+		draw_line(center + dir * g, center + dir * (g + l), outline, w + 2.0, true)
+	# Zweite Schicht: leuchtende Arme.
+	for dir: Vector2 in arms:
+		draw_line(center + dir * g, center + dir * (g + l), aim_color, w, true)
+	# Akzentpunkte an den Armspitzen.
+	for dir: Vector2 in arms:
+		draw_circle(center + dir * (g + l + 1.5), 1.1, accent)
+	# Zentrum: Ring + Punkt.
+	draw_circle(center, 2.7, outline)
+	draw_arc(center, 2.0, 0.0, TAU, 24, aim_color, 1.2, true)
+	draw_circle(center, 1.3, accent)
