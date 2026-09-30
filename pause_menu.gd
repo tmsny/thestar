@@ -13,6 +13,7 @@ var _game_over: bool = false
 var _paused: bool = false
 
 func _ready() -> void:
+	GameConfig.ensure_loaded()
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 20
 	_build()
@@ -26,6 +27,10 @@ func _process(_delta: float) -> void:
 		_show_game_over()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("fullscreen"):
+		GameConfig.toggle_fullscreen()
+		get_viewport().set_input_as_handled()
+		return
 	if not (event is InputEventKey) or not event.pressed or event.echo or event.keycode != KEY_ESCAPE:
 		return
 	if _game_over:
@@ -70,21 +75,17 @@ func _build() -> void:
 
 func _new_center() -> CenterContainer:
 	var center: CenterContainer = CenterContainer.new()
+	center.theme = UiTheme.get_theme()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 	return center
 
 func _panel_inside(center: CenterContainer, title_text: String) -> VBoxContainer:
 	var panel: PanelContainer = PanelContainer.new()
-	var style: StyleBoxFlat = StyleBoxFlat.new()
-	style.bg_color = Color(0.03, 0.05, 0.07, 0.97)
-	style.border_color = Color(0.15, 0.72, 0.68, 0.9)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(12)
-	style.content_margin_left = 40.0
-	style.content_margin_right = 40.0
-	style.content_margin_top = 26.0
-	style.content_margin_bottom = 26.0
+	var style: StyleBoxFlat = UiTheme.box(UiTheme.PANEL_BG, UiTheme.BORDER, 16, 1, 40.0, 26.0)
+	style.shadow_color = Color(0, 0, 0, 0.5)
+	style.shadow_size = 14
+	style.shadow_offset = Vector2(0, 6)
 	panel.add_theme_stylebox_override("panel", style)
 	center.add_child(panel)
 	var column: VBoxContainer = VBoxContainer.new()
@@ -95,7 +96,7 @@ func _panel_inside(center: CenterContainer, title_text: String) -> VBoxContainer
 	title.text = title_text
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 34)
-	title.add_theme_color_override("font_color", Color(0.47, 0.92, 0.85))
+	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	column.add_child(title)
 	return column
 

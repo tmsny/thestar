@@ -2,34 +2,44 @@ extends CharacterBody3D
 
 const SPEED: float = 7.0
 const GRAVITY: float = 18.0
+const CROUCH_SPEED_MULT: float = 0.45
+const CROUCH_SIZE_MULT: float = 0.8
+const CROUCH_BLEND_SPEED: float = 9.0
+const STAND_CAMERA_Y: float = 1.58
+const CROUCH_CAMERA_Y: float = 1.12
+const CAPSULE_HEIGHT: float = 1.8
+const CAPSULE_RADIUS: float = 0.38
 const CLIMB_SPEED: float = 4.5
 const LADDER_JUMP: float = 6.0
 const MAX_HEALTH: int = 100
 const REGEN_DELAY: float = 5.0
 const REGEN_RATE: float = 9.0
-const MAGAZINES: Array[int] = [12, 30, 5, 6, 18, 999999, 24, 6, 999999, 4]
-const FIRE_INTERVALS: Array[float] = [0.28, 0.095, 1.10, 0.72, 0.20, 0.55, 0.075, 0.62, 0.90, 1.15]
-const RELOAD_LENGTHS: Array[float] = [1.2, 1.6, 2.4, 1.9, 1.5, 0.0, 1.8, 2.0, 0.0, 2.2]
-const ADS_FOV: Array[float] = [50.0, 45.0, 16.0, 48.0, 48.0, 78.0, 44.0, 42.0, 78.0, 52.0]
-const PELLETS: Array[int] = [1, 1, 1, 7, 1, 1, 1, 1, 1, 1]
-const BODY_DAMAGE: Array[int] = [34, 20, 30, 9, 24, 48, 12, 58, 72, 0]
-const HEAD_MULT: Array[float] = [2.0, 1.5, 10.0, 2.0, 1.5, 1.0, 1.5, 1.8, 1.0, 1.0]
-const AUTOMATIC: Array[bool] = [false, true, false, false, true, false, false, false, false, false]
-const MELEE_REACH: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 2.1, 0.0, 0.0, 1.7, 0.0]
+# Waffenwerte kommen zentral aus WeaponData (eine Quelle der Wahrheit fuer
+# Spielverhalten UND Waffen-Menue).
+const MAGAZINES: Array[int] = WeaponData.MAGAZINES
+const FIRE_INTERVALS: Array[float] = WeaponData.FIRE_INTERVALS
+const RELOAD_LENGTHS: Array[float] = WeaponData.RELOAD_LENGTHS
+const ADS_FOV: Array[float] = WeaponData.ADS_FOV
+const PELLETS: Array[int] = WeaponData.PELLETS
+const BODY_DAMAGE: Array[int] = WeaponData.BODY_DAMAGE
+const HEAD_MULT: Array[float] = WeaponData.HEAD_MULT
+const AUTOMATIC: Array[bool] = WeaponData.AUTOMATIC
+const MELEE_REACH: Array[float] = WeaponData.MELEE_REACH
 const HUD_SCENE: PackedScene = preload("res://hud_pro.tscn")
 const TRACER_SCRIPT: Script = preload("res://weapon_tracer.gd")
 const IMPACT_SCRIPT: Script = preload("res://weapon_impact.gd")
 const GRENADE_SCRIPT: Script = preload("res://grenade.gd")
 const THROW_SPEED: float = 17.0
 const GRENADE_COUNT: int = 3
-const WEAPON_COUNT: int = 10
-const BURST_WEAPON: int = 6
-const GRENADE_LAUNCHER: int = 9
+const WEAPON_COUNT: int = WeaponData.COUNT
+const BURST_WEAPON: int = WeaponData.BURST_WEAPON
+const GRENADE_LAUNCHER: int = WeaponData.GRENADE_LAUNCHER
 
 @onready var camera: Camera3D = $Camera3D
 @onready var viewmodel: Node3D = $Camera3D/Viewmodel
 @onready var muzzle_light: OmniLight3D = $Camera3D/Viewmodel/MuzzleFlash
 @onready var ladder_sensor: Area3D = $LadderSensor
+@onready var body_collision: CollisionShape3D = $BodyCollision
 
 var health: int = MAX_HEALTH
 var score: int = 0
@@ -56,6 +66,8 @@ var grenades: int = GRENADE_COUNT
 var firing: bool = false
 var burst_shots_left: int = 0
 var burst_timer: float = 0.0
+var crouching: bool = false
+var crouch_blend: float = 0.0
 
 func _ready() -> void:
 	GameConfig.ensure_loaded()
@@ -66,6 +78,9 @@ func _ready() -> void:
 	add_to_group("player")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	wid = GameConfig.weapon_slots[selected_weapon]
+	if GameConfig.pending_weapon >= 0 and GameConfig.pending_weapon < WEAPON_COUNT:
+		wid = GameConfig.pending_weapon
+	GameConfig.pending_weapon = -1
 	camera.fov = GameConfig.fov
 	await get_tree().process_frame
 	if not is_inside_tree():
@@ -107,33 +122,32 @@ func _unhandled_input(event: InputEvent) -> void:
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			select_weapon((selected_weapon + 1) % GameConfig.weapon_slots.size())
 	elif event is InputEventKey and event.pressed and not event.echo:
-		match event.keycode:
-			KEY_1: select_weapon(0)
-			KEY_2: select_weapon(1)
-			KEY_3: select_weapon(2)
-			KEY_4: select_weapon(3)
-			KEY_5: select_weapon(4)
-			KEY_6: select_weapon(5)
-			KEY_7: select_weapon(6)
-			KEY_8: select_weapon(7)
-			KEY_9: select_weapon(8)
-			KEY_0: select_weapon(9)
-			KEY_R: reload_weapon()
-			KEY_G: throw_grenade()
+		var slot_handled: bool = false
+		for i: int in range(mini(4, GameConfig.weapon_slots.size())):
+			if event.is_action_pressed("slot_%d" % (i + 1)):
+				select_weapon(i)
+				slot_handled = true
+				break
+		if not slot_handled:
+			if event.is_action_pressed("reload"):
+				reload_weapon()
+			elif event.is_action_pressed("grenade"):
+				throw_grenade()
 
 func _physics_process(delta: float) -> void:
 	if health <= 0:
 		return
 	ladder_cooldown = maxf(ladder_cooldown - delta, 0.0)
 	_update_ladder()
+	_update_crouch(delta)
 	var move_axis: Vector2 = Vector2.ZERO
-	move_axis.x = float(Input.is_key_pressed(KEY_D)) - float(Input.is_key_pressed(KEY_A))
-	move_axis.y = float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
+	move_axis.x = float(Input.is_action_pressed("move_right")) - float(Input.is_action_pressed("move_left"))
+	move_axis.y = float(Input.is_action_pressed("move_back")) - float(Input.is_action_pressed("move_forward"))
 	move_axis = move_axis.normalized()
 	if mantle_time > 0.0:
 		mantle_time = maxf(mantle_time - delta, 0.0)
 		velocity = mantle_velocity
-	elif ladder_area != null and ladder_cooldown <= 0.0:
+	elif ladder_area != null and ladder_cooldown <= 0.0 and Input.is_action_pressed("jump"):
 		_climb(move_axis)
 	else:
 		_walk(delta, move_axis)
@@ -183,14 +197,26 @@ func _physics_process(delta: float) -> void:
 			hud.call("set_hit", false)
 			hit_marker.visible = false
 
+func _update_crouch(delta: float) -> void:
+	crouching = Input.is_action_pressed("crouch")
+	crouch_blend = move_toward(crouch_blend, 1.0 if crouching else 0.0, delta * CROUCH_BLEND_SPEED)
+	var size_mult: float = lerpf(1.0, CROUCH_SIZE_MULT, crouch_blend)
+	var capsule: CapsuleShape3D = body_collision.shape as CapsuleShape3D
+	if capsule != null:
+		capsule.height = CAPSULE_HEIGHT * size_mult
+		capsule.radius = CAPSULE_RADIUS * size_mult
+	body_collision.position.y = CAPSULE_HEIGHT * size_mult * 0.5
+	camera.position.y = lerpf(STAND_CAMERA_Y, CROUCH_CAMERA_Y, crouch_blend)
+
 func _walk(delta: float, move_axis: Vector2) -> void:
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
-	if Input.is_key_pressed(KEY_SPACE) and is_on_floor():
+	if Input.is_action_pressed("jump") and is_on_floor():
 		velocity.y = 5.0
 	var direction: Vector3 = (transform.basis * Vector3(move_axis.x, 0.0, move_axis.y)).normalized()
-	velocity.x = direction.x * SPEED
-	velocity.z = direction.z * SPEED
+	var move_speed: float = SPEED * lerpf(1.0, CROUCH_SPEED_MULT, crouch_blend)
+	velocity.x = direction.x * move_speed
+	velocity.z = direction.z * move_speed
 
 func _climb(move_axis: Vector2) -> void:
 	# Step off the top of the ladder onto the roof / platform above it.
@@ -198,23 +224,18 @@ func _climb(move_axis: Vector2) -> void:
 	var top: float = 9999.0
 	if ladder_area.has_meta("top_y"):
 		top = float(ladder_area.get_meta("top_y"))
-	if Input.is_key_pressed(KEY_W) and global_position.y >= top - 0.25:
+	if global_position.y >= top - 0.25:
 		mantle_time = 0.32
 		mantle_velocity = Vector3(-normal.x, 0.0, -normal.z).normalized() * 4.2 + Vector3(0.0, 3.8, 0.0)
 		ladder_cooldown = 0.5
 		velocity = mantle_velocity
 		return
-	velocity.y = 0.0
-	if Input.is_key_pressed(KEY_W):
-		velocity.y = CLIMB_SPEED
-	elif Input.is_key_pressed(KEY_S):
-		velocity.y = -CLIMB_SPEED
+	# Klettern ist nur aktiv, solange Space gehalten wird (siehe _physics_process).
+	# Standard: aufsteigen; mit S absteigen.
+	velocity.y = -CLIMB_SPEED if Input.is_action_pressed("move_back") else CLIMB_SPEED
 	var side: Vector3 = transform.basis.x * move_axis.x * 2.2
 	velocity.x = side.x
 	velocity.z = side.z
-	if Input.is_key_pressed(KEY_SPACE):
-		velocity.y = LADDER_JUMP
-		ladder_cooldown = 0.45
 	_face_ladder()
 
 func _update_ladder() -> void:
@@ -243,11 +264,8 @@ func shoot() -> void:
 	if ammunition[wid] <= 0:
 		reload_weapon()
 		return
-	if wid == 5:
-		_melee_attack(48, MELEE_REACH[wid])
-		return
-	if wid == 8:
-		_melee_attack(72, MELEE_REACH[wid])
+	if wid == 5 or wid == 8:
+		_melee_attack(BODY_DAMAGE[wid], MELEE_REACH[wid])
 		return
 	if wid == GRENADE_LAUNCHER:
 		_fire_grenade_launcher()
@@ -303,7 +321,9 @@ func _fire_round() -> void:
 				if target.has_method("is_headshot"):
 					headshot = target.call("is_headshot", endpoint)
 				var damage: float = BODY_DAMAGE[wid] * (HEAD_MULT[wid] if headshot else 1.0)
-				target.call("take_damage", int(round(damage)))
+				var dealt: int = int(round(damage))
+				target.call("take_damage", dealt)
+				hud.call("show_damage", dealt)
 				scored_hit = true
 				if headshot:
 					headshot_hit = true
@@ -344,6 +364,7 @@ func _melee_attack(damage: int, reach: float) -> void:
 	if nearest != null and nearest.has_method("take_damage"):
 		nearest.call("take_damage", damage)
 		if hud != null:
+			hud.call("show_damage", damage)
 			hud.call("set_hit", true)
 			hit_marker.visible = true
 			hit_time = 0.23
@@ -370,15 +391,21 @@ func _fire_grenade_launcher() -> void:
 	update_hud()
 
 func spawn_tracer(origin: Vector3, endpoint: Vector3) -> void:
+	var scene: Node = get_tree().current_scene
+	if scene == null:
+		return
 	var tracer: MeshInstance3D = MeshInstance3D.new()
 	tracer.set_script(TRACER_SCRIPT)
-	get_tree().current_scene.add_child(tracer)
+	scene.add_child(tracer)
 	tracer.call("set_line", origin, endpoint)
 
 func spawn_impact(position_world: Vector3, surface_normal: Vector3) -> void:
+	var scene: Node = get_tree().current_scene
+	if scene == null:
+		return
 	var impact: Node3D = Node3D.new()
 	impact.set_script(IMPACT_SCRIPT)
-	get_tree().current_scene.add_child(impact)
+	scene.add_child(impact)
 	impact.global_position = position_world + surface_normal * 0.035
 	impact.look_at(position_world + surface_normal, Vector3.UP)
 
@@ -406,10 +433,51 @@ func throw_grenade() -> void:
 	grenades -= 1
 	if hud != null:
 		hud.call("set_grenades", grenades)
+	if viewmodel != null:
+		viewmodel.call("play_throw")
+	_animate_grenade_throw()
+
+## Sichtbare Granate fliegt aus der Hand zum Freigabepunkt, dann startet die Physik.
+func _animate_grenade_throw() -> void:
+	var release: Vector3 = camera.global_position - camera.global_basis.z * 0.7
+	var visual: MeshInstance3D = _make_grenade_visual()
+	var start: Vector3 = camera.global_position + camera.global_basis.x * 0.24 - camera.global_basis.y * 0.20 - camera.global_basis.z * 0.35
+	visual.global_position = start
+	visual.global_rotation = Vector3.ZERO
+	var mid: Vector3 = start.lerp(release, 0.5) + camera.global_basis.y * 0.16 - camera.global_basis.z * 0.08
+	var throw_tw: Tween = create_tween()
+	throw_tw.tween_property(visual, "global_position", mid, 0.09).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	throw_tw.tween_property(visual, "global_position", release, 0.13).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	throw_tw.parallel().tween_property(visual, "rotation:y", TAU * 1.5, 0.22)
+	throw_tw.tween_callback(visual.queue_free)
+	throw_tw.tween_callback(_launch_grenade.bind(release))
+
+func _make_grenade_visual() -> MeshInstance3D:
+	var mesh_node: MeshInstance3D = MeshInstance3D.new()
+	var sphere: SphereMesh = SphereMesh.new()
+	sphere.radius = 0.085
+	sphere.height = 0.17
+	mesh_node.mesh = sphere
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
+	mat.albedo_color = Color(0.17, 0.23, 0.19)
+	mat.metallic = 0.45
+	mat.roughness = 0.5
+	mesh_node.material_override = mat
+	var scene: Node = get_tree().current_scene
+	if scene != null:
+		scene.add_child(mesh_node)
+	else:
+		add_child(mesh_node)
+	return mesh_node
+
+func _launch_grenade(release: Vector3) -> void:
+	var scene: Node = get_tree().current_scene
+	if scene == null:
+		scene = get_parent()
 	var grenade: RigidBody3D = RigidBody3D.new()
 	grenade.set_script(GRENADE_SCRIPT)
-	get_tree().current_scene.add_child(grenade)
-	grenade.global_position = camera.global_position - camera.global_basis.z * 0.7
+	scene.add_child(grenade)
+	grenade.global_position = release
 	grenade.add_collision_exception_with(self)
 	var dir: Vector3 = -camera.global_basis.z
 	grenade.call("launch", dir * THROW_SPEED + Vector3(0.0, 3.2, 0.0))

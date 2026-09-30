@@ -30,7 +30,7 @@ project/assembly_name="Test Star"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
+enabled=PackedStringArray()
 
 [physics]
 

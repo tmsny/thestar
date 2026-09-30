@@ -15,6 +15,10 @@ var flash_sprite: MeshInstance3D
 var flash_timer: float = 0.0
 var flash_scale_tween: Tween
 var melee_swing: float = 0.0
+var throw_anim: float = 0.0
+
+## Mündungsfeuer-Stärke pro Waffe (Index = weapon_index, 10 Waffen).
+const FLASH_GAIN: Array[float] = [1.0, 1.0, 1.75, 1.55, 1.2, 1.0, 1.1, 1.6, 1.0, 1.0]
 
 func _ready() -> void:
 	position = Vector3(0.30, -0.28, -0.78)
@@ -197,7 +201,7 @@ func fire() -> void:
 		return
 	if weapon_index == 9:
 		return
-	var gain: float = [1.0, 1.0, 1.75, 1.55][weapon_index]
+	var gain: float = FLASH_GAIN[weapon_index] if weapon_index < FLASH_GAIN.size() else 1.0
 	flash_light.light_energy = 7.0 * gain
 	flash_sprite.visible = true
 	flash_sprite.scale = Vector3.ONE * gain
@@ -223,6 +227,10 @@ func _eject_casing() -> void:
 	casing_tween.parallel().tween_property(mesh, "rotation", spin, 0.45)
 	casing_tween.tween_callback(mesh.queue_free)
 
+## Wurf-Animation ausloesen (Waffe senkt sich beim Granatwurf).
+func play_throw() -> void:
+	throw_anim = 1.0
+
 func _process(delta: float) -> void:
 	if flash_timer > 0.0:
 		flash_timer -= delta
@@ -231,6 +239,7 @@ func _process(delta: float) -> void:
 			flash_light.light_energy = 0.0
 	recoil_amount = move_toward(recoil_amount, 0.0, delta * 5.0)
 	melee_swing = move_toward(melee_swing, 0.0, delta * 5.0)
+	throw_anim = move_toward(throw_anim, 0.0, delta * 3.6)
 	bob_phase += delta * 8.0
 	sway = sway.lerp(Vector2.ZERO, clampf(delta * 9.0, 0.0, 1.0))
 	var sway_scale: float = 1.0 - 0.55 * aim_blend
@@ -247,6 +256,10 @@ func _process(delta: float) -> void:
 	elif weapon_index == 8:
 		position = position + Vector3(-0.16, -0.12, -0.18) * melee_swing
 		rotation.x = 0.9 * melee_swing
+	if throw_anim > 0.0:
+		# Wurf: Waffe senkt sich, zieht nach hinten und kippt an.
+		position += Vector3(0.02, -0.15, 0.17) * throw_anim
+		rotation.x += -0.55 * throw_anim
 
 func _box(part_name: String, dimensions: Vector3, local_pos: Vector3, material: Material, local_rot: Vector3 = Vector3.ZERO) -> void:
 	var mesh_node: MeshInstance3D = MeshInstance3D.new()

@@ -5,12 +5,12 @@ const WEAPON_ICONS: Array[String] = [
 	"res://assets/generated/weapon_icon_rifle.png",
 	"res://assets/generated/weapon_icon_sniper.png",
 	"res://assets/generated/weapon_icon_shotgun.png",
-	"res://assets/generated/weapon_icon_energy.png",
-	"res://assets/generated/weapon_icon_knife.png",
-	"res://assets/generated/weapon_icon_burst_smg.png",
-	"res://assets/generated/weapon_icon_hand_cannon.png",
-	"res://assets/generated/weapon_icon_hammer.png",
-	"res://assets/generated/weapon_icon_grenade_launcher.png",
+	"res://assets/generated/weapon_icon_energy_flat.png",
+	"res://assets/generated/weapon_icon_knife_flat.png",
+	"res://assets/generated/weapon_icon_burst_smg_flat.png",
+	"res://assets/generated/weapon_icon_hand_cannon_flat.png",
+	"res://assets/generated/weapon_icon_hammer_flat.png",
+	"res://assets/generated/weapon_icon_grenade_launcher_flat.png",
 ]
 const ICON_ACTIVE_BG: Color = Color(0.05, 0.15, 0.16, 0.92)
 const ICON_IDLE_BG: Color = Color(0.02, 0.04, 0.05, 0.72)
@@ -25,12 +25,14 @@ const SCOPE_SHADER: Shader = preload("res://scope.gdshader")
 @onready var score_label: Label = $ScorePanel/ScoreMargin/ScoreColumn/ScoreNumber
 @onready var reload_label: Label = $WeaponPanel/WeaponMargin/WeaponColumn/ReloadLabel
 @onready var status_text: Label = $StatusText
+@onready var controls_label: Label = $Controls
 
 var hit_flash: float = 0.0
 var aiming: bool = false
 var scoped: bool = false
 var scope_rect: ColorRect
 var grenade_label: Label
+var damage_label: Label
 
 var weapon_slot: int = 0
 var weapon_frames: Array[PanelContainer] = []
@@ -38,10 +40,25 @@ var weapon_icons: Array[TextureRect] = []
 var weapon_styles: Array[StyleBoxFlat] = []
 
 func _ready() -> void:
+	theme = UiTheme.get_theme()
 	_build_scope()
 	_build_weapon_bar()
 	_build_grenades()
 	set_weapon_slot(0)
+	_update_controls_hint()
+	_build_damage_readout()
+
+func _update_controls_hint() -> void:
+	if controls_label == null:
+		return
+	controls_label.text = "%s/%s/%s/%s BEWEGEN · %s SPRUNG · %s DUCKEN · %s LEITER (halten) · LMB FEUERN · RMB ZIELEN · %s–%s WAFFEN · %s NACHLADEN · %s GRANATE" % [
+		GameConfig.key_name("move_forward"), GameConfig.key_name("move_back"),
+		GameConfig.key_name("move_left"), GameConfig.key_name("move_right"),
+		GameConfig.key_name("jump"), GameConfig.key_name("crouch"),
+		GameConfig.key_name("jump"),
+		GameConfig.key_name("slot_1"), GameConfig.key_name("slot_4"),
+		GameConfig.key_name("reload"), GameConfig.key_name("grenade"),
+	]
 
 func _build_weapon_bar() -> void:
 	var bar: HBoxContainer = HBoxContainer.new()
@@ -81,7 +98,7 @@ func _build_weapon_bar() -> void:
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		column.add_child(icon)
 		var key: Label = Label.new()
-		key.text = str(i + 1)
+		key.text = GameConfig.key_name("slot_%d" % (i + 1))
 		key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		key.add_theme_font_size_override("font_size", 13)
 		key.add_theme_color_override("font_color", Color(0.72, 0.86, 0.86, 0.9))
@@ -153,12 +170,36 @@ func _build_grenades() -> void:
 	grenade_label.offset_bottom = -20.0
 	grenade_label.add_theme_font_size_override("font_size", 19)
 	grenade_label.add_theme_color_override("font_color", Color(0.7, 0.9, 0.85, 0.92))
-	grenade_label.text = "GRANATEN (G)  ×3"
+	grenade_label.text = "GRANATEN (%s)  ×3" % GameConfig.key_name("grenade")
 	add_child(grenade_label)
 
 func set_grenades(count: int) -> void:
 	if grenade_label != null:
-		grenade_label.text = "GRANATEN (G)  ×%d" % count
+		grenade_label.text = "GRANATEN (%s)  ×%d" % [GameConfig.key_name("grenade"), count]
+
+## Schadensanzeige unten am Bildschirm (z. B. "-72"), bleibt stehen.
+func _build_damage_readout() -> void:
+	damage_label = Label.new()
+	damage_label.name = "DamageReadout"
+	damage_label.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	damage_label.offset_left = -160.0
+	damage_label.offset_right = 160.0
+	damage_label.offset_top = -150.0
+	damage_label.offset_bottom = -100.0
+	damage_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	damage_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	damage_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	damage_label.add_theme_font_size_override("font_size", 44)
+	damage_label.add_theme_color_override("font_color", Color(1.0, 0.82, 0.3))
+	damage_label.add_theme_color_override("font_outline_color", Color(0.06, 0.05, 0.03, 0.95))
+	damage_label.add_theme_constant_override("outline_size", 7)
+	damage_label.text = ""
+	add_child(damage_label)
+
+func show_damage(amount: int) -> void:
+	if damage_label == null:
+		return
+	damage_label.text = "-%d" % amount
 
 func _process(delta: float) -> void:
 	if hit_flash > 0.0:
