@@ -6,7 +6,7 @@ extends RefCounted
 
 const PATH: String = "user://settings.cfg"
 
-const WEAPON_NAMES: Array[String] = ["PISTOLE", "STURMGEWEHR", "SNIPER", "SCHROTFLINTE"]
+const WEAPON_NAMES: Array[String] = ["PISTOLE", "STURMGEWEHR", "SNIPER", "SCHROTFLINTE", "ENERGIEPISTOLE", "MESSER", "BURST-SMG", "HANDKANONE", "VORSCHLAGHAMMER", "GRANATWERFER"]
 const DIFFICULTY_NAMES: Array[String] = ["LEICHT", "NORMAL", "SCHWER"]
 
 const DEFAULT_SENSITIVITY: float = 0.0018
@@ -40,11 +40,18 @@ static func load_config() -> void:
 	master_volume = config.get_value("audio", "master_volume", DEFAULT_VOLUME)
 	difficulty = config.get_value("game", "difficulty", DEFAULT_DIFFICULTY)
 	var slots: Variant = config.get_value("game", "weapon_slots", weapon_slots)
-	if slots is Array and (slots as Array).size() == 4:
+	if slots is Array:
 		var loaded_slots: Array[int] = []
 		for value: Variant in slots:
 			loaded_slots.append(clampi(int(value), 0, WEAPON_NAMES.size() - 1))
-		weapon_slots = loaded_slots
+		if loaded_slots.size() >= 4:
+			weapon_slots = loaded_slots.slice(0, 4)
+	for slot: int in range(weapon_slots.size()):
+		if weapon_slots.count(weapon_slots[slot]) > 1:
+			for candidate: int in range(WEAPON_NAMES.size()):
+				if not weapon_slots.has(candidate):
+					weapon_slots[slot] = candidate
+					break
 	apply()
 
 static func save_config() -> void:

@@ -58,7 +58,7 @@ func _build() -> void:
 	column.add_child(title)
 
 	var scroll: ScrollContainer = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0.0, 360.0)
+	scroll.custom_minimum_size = Vector2(0.0, 460.0)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	column.add_child(scroll)
@@ -112,13 +112,13 @@ func _build() -> void:
 		GameConfig.save_config())
 	body.add_child(_labelled(body, "Schwierigkeit", _difficulty_option))
 
-	body.add_child(_section("WAFFEN-SLOTS  (welche Waffe auf Taste 1–4)"))
+	body.add_child(_section("WAFFEN-SLOTS  (4 aus 10 Waffen; Tasten 1–4)"))
 	var slot_grid: GridContainer = GridContainer.new()
 	slot_grid.columns = 2
 	slot_grid.add_theme_constant_override("h_separation", 22)
 	slot_grid.add_theme_constant_override("v_separation", 8)
 	body.add_child(slot_grid)
-	for slot: int in range(4):
+	for slot: int in range(GameConfig.weapon_slots.size()):
 		var label: Label = Label.new()
 		label.text = "Taste %d" % (slot + 1)
 		label.add_theme_font_size_override("font_size", 16)
@@ -128,6 +128,11 @@ func _build() -> void:
 			option.add_item(weapon_name)
 		option.selected = GameConfig.weapon_slots[slot]
 		option.item_selected.connect(func(index: int) -> void:
+			if index in GameConfig.weapon_slots and GameConfig.weapon_slots[slot] != index:
+				var previous_weapon: int = GameConfig.weapon_slots[slot]
+				var duplicate_slot: int = GameConfig.weapon_slots.find(index)
+				GameConfig.weapon_slots[duplicate_slot] = previous_weapon
+				_slot_options[duplicate_slot].select(previous_weapon)
 			GameConfig.weapon_slots[slot] = index
 			GameConfig.save_config())
 		slot_grid.add_child(option)

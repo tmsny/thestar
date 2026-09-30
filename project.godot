@@ -15,6 +15,10 @@ run/main_scene="res://menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
+
 [display]
 
 window/stretch/mode="canvas_items"
@@ -24,6 +28,10 @@ window/stretch/aspect="expand"
 
 project/assembly_name="Test Star"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_ai/plugin.cfg")
+
 [physics]
 
 3d/physics_engine="Jolt Physics"
@@ -31,3 +39,7 @@ project/assembly_name="Test Star"
 [rendering]
 
 rendering_device/driver.windows="d3d12"
+
+[run]
+
+main_scene="res://menu.tscn"

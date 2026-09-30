@@ -7,19 +7,24 @@ const LADDER_JUMP: float = 6.0
 const MAX_HEALTH: int = 100
 const REGEN_DELAY: float = 5.0
 const REGEN_RATE: float = 9.0
-const MAGAZINES: Array[int] = [12, 30, 5, 6]
-const FIRE_INTERVALS: Array[float] = [0.28, 0.095, 1.10, 0.72]
-const RELOAD_LENGTHS: Array[float] = [1.2, 1.6, 2.4, 1.9]
-const ADS_FOV: Array[float] = [50.0, 45.0, 16.0, 48.0]
-const PELLETS: Array[int] = [1, 1, 1, 7]
-const BODY_DAMAGE: Array[int] = [34, 20, 30, 9]
-const HEAD_MULT: Array[float] = [2.0, 1.5, 10.0, 2.0]
+const MAGAZINES: Array[int] = [12, 30, 5, 6, 18, 999999, 24, 6, 999999, 4]
+const FIRE_INTERVALS: Array[float] = [0.28, 0.095, 1.10, 0.72, 0.20, 0.55, 0.075, 0.62, 0.90, 1.15]
+const RELOAD_LENGTHS: Array[float] = [1.2, 1.6, 2.4, 1.9, 1.5, 0.0, 1.8, 2.0, 0.0, 2.2]
+const ADS_FOV: Array[float] = [50.0, 45.0, 16.0, 48.0, 48.0, 78.0, 44.0, 42.0, 78.0, 52.0]
+const PELLETS: Array[int] = [1, 1, 1, 7, 1, 1, 1, 1, 1, 1]
+const BODY_DAMAGE: Array[int] = [34, 20, 30, 9, 24, 48, 12, 58, 72, 0]
+const HEAD_MULT: Array[float] = [2.0, 1.5, 10.0, 2.0, 1.5, 1.0, 1.5, 1.8, 1.0, 1.0]
+const AUTOMATIC: Array[bool] = [false, true, false, false, true, false, false, false, false, false]
+const MELEE_REACH: Array[float] = [0.0, 0.0, 0.0, 0.0, 0.0, 2.1, 0.0, 0.0, 1.7, 0.0]
 const HUD_SCENE: PackedScene = preload("res://hud_pro.tscn")
 const TRACER_SCRIPT: Script = preload("res://weapon_tracer.gd")
 const IMPACT_SCRIPT: Script = preload("res://weapon_impact.gd")
 const GRENADE_SCRIPT: Script = preload("res://grenade.gd")
 const THROW_SPEED: float = 17.0
 const GRENADE_COUNT: int = 3
+const WEAPON_COUNT: int = 10
+const BURST_WEAPON: int = 6
+const GRENADE_LAUNCHER: int = 9
 
 @onready var camera: Camera3D = $Camera3D
 @onready var viewmodel: Node3D = $Camera3D/Viewmodel
@@ -32,7 +37,7 @@ var selected_weapon: int = 0
 var wid: int = 0
 var regen_timer: float = 0.0
 var regen_accum: float = 0.0
-var ammunition: Array[int] = [12, 30, 5, 6]
+var ammunition: Array[int] = []
 var cooldown: float = 0.0
 var reloading_for: float = 0.0
 var pitch: float = 0.0
@@ -48,9 +53,16 @@ var ladder_cooldown: float = 0.0
 var mantle_time: float = 0.0
 var mantle_velocity: Vector3 = Vector3.ZERO
 var grenades: int = GRENADE_COUNT
+var firing: bool = false
+var burst_shots_left: int = 0
+var burst_timer: float = 0.0
 
 func _ready() -> void:
 	GameConfig.ensure_loaded()
+	if GameConfig.weapon_slots.size() != 4:
+		GameConfig.weapon_slots = [0, 1, 2, 3]
+	for magazine: int in MAGAZINES:
+		ammunition.append(magazine)
 	add_to_group("player")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	wid = GameConfig.weapon_slots[selected_weapon]
@@ -84,8 +96,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		camera.rotation.x = pitch
 		viewmodel.call("add_look", event.relative.x, event.relative.y)
 	elif event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			shoot()
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			firing = event.pressed
+			if event.pressed:
+				shoot()
 		elif event.button_index == MOUSE_BUTTON_RIGHT:
 			aiming = event.pressed
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -98,6 +112,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			KEY_2: select_weapon(1)
 			KEY_3: select_weapon(2)
 			KEY_4: select_weapon(3)
+			KEY_5: select_weapon(4)
+			KEY_6: select_weapon(5)
+			KEY_7: select_weapon(6)
+			KEY_8: select_weapon(7)
+			KEY_9: select_weapon(8)
+			KEY_0: select_weapon(9)
 			KEY_R: reload_weapon()
 			KEY_G: throw_grenade()
 
@@ -119,15 +139,26 @@ func _physics_process(delta: float) -> void:
 		_walk(delta, move_axis)
 	move_and_slide()
 	cooldown = maxf(cooldown - delta, 0.0)
+	burst_timer = maxf(burst_timer - delta, 0.0)
+	if burst_shots_left > 0 and burst_timer <= 0.0:
+		burst_shots_left -= 1
+		_fire_round()
+		burst_timer = 0.075
+	if firing and AUTOMATIC[wid]:
+		shoot()
+	if wid == GRENADE_LAUNCHER or wid == 5 or wid == 8:
+		aim_blend = 0.0
 	recoil_amount = move_toward(recoil_amount, 0.0, delta * 4.0)
 	bob_phase += delta * (9.0 if move_axis.length() > 0.0 else 0.0)
 	aim_blend = move_toward(aim_blend, 1.0 if aiming else 0.0, delta * 7.0)
 	camera.fov = lerpf(GameConfig.fov, ADS_FOV[wid], aim_blend)
+	var scoped_now: bool = wid == 2 and aim_blend > 0.6
+	viewmodel.visible = not scoped_now
 	viewmodel.call("set_aim", aim_blend)
 	viewmodel.call("set_motion", bob_phase, recoil_amount)
 	if hud != null:
 		hud.call("set_aim", aim_blend > 0.5)
-		hud.call("set_scope", wid == 2 and aim_blend > 0.35)
+		hud.call("set_scope", scoped_now)
 	if health > 0 and health < MAX_HEALTH:
 		regen_timer = maxf(regen_timer - delta, 0.0)
 		if regen_timer == 0.0:
@@ -143,6 +174,8 @@ func _physics_process(delta: float) -> void:
 		reloading_for = maxf(reloading_for - delta, 0.0)
 		if reloading_for == 0.0:
 			ammunition[wid] = MAGAZINES[wid]
+			if wid == 5 or wid == 8:
+				ammunition[wid] = MAGAZINES[wid]
 		update_hud()
 	if hit_time > 0.0:
 		hit_time -= delta
@@ -205,8 +238,35 @@ func _face_ladder() -> void:
 func shoot() -> void:
 	if health <= 0 or cooldown > 0.0 or reloading_for > 0.0:
 		return
+	if wid == BURST_WEAPON and burst_shots_left > 0:
+		return
 	if ammunition[wid] <= 0:
 		reload_weapon()
+		return
+	if wid == 5:
+		_melee_attack(48, MELEE_REACH[wid])
+		return
+	if wid == 8:
+		_melee_attack(72, MELEE_REACH[wid])
+		return
+	if wid == GRENADE_LAUNCHER:
+		_fire_grenade_launcher()
+		return
+	if wid == BURST_WEAPON:
+		cooldown = FIRE_INTERVALS[wid]
+		recoil_amount = 0.35
+		burst_shots_left = 2
+		burst_timer = 0.075
+		_fire_round()
+		return
+	_fire_round()
+
+func _fire_round() -> void:
+	if health <= 0 or reloading_for > 0.0 or ammunition[wid] <= 0:
+		burst_shots_left = 0
+		return
+	if wid == BURST_WEAPON and burst_shots_left > 0 and burst_timer > 0.0 and ammunition[wid] <= 2:
+		burst_shots_left = 0
 		return
 	ammunition[wid] -= 1
 	cooldown = FIRE_INTERVALS[wid]
@@ -216,11 +276,18 @@ func shoot() -> void:
 	var scored_hit: bool = false
 	var headshot_hit: bool = false
 	var spread_scale: float = 0.35 if aim_blend > 0.5 else 1.0
+	var burst_spread: float = 0.0
+	if wid == BURST_WEAPON:
+		burst_spread = float(2 - burst_shots_left) * 0.003
 	for pellet: int in range(pellets):
 		var spread: Vector2 = Vector2.ZERO
 		if pellets > 1:
 			spread = Vector2(randf_range(-0.05, 0.05), randf_range(-0.05, 0.05)) * spread_scale
-		var aim: Vector3 = -camera.global_basis.z + camera.global_basis.x * spread.x + camera.global_basis.y * spread.y
+		if wid == 7:
+			spread = Vector2(randf_range(-0.006, 0.006), randf_range(-0.006, 0.006))
+		if wid == 4:
+			spread = Vector2(randf_range(-0.018, 0.018), randf_range(-0.018, 0.018))
+		var aim: Vector3 = -camera.global_basis.z + camera.global_basis.x * (spread.x + burst_spread) + camera.global_basis.y * spread.y
 		var origin: Vector3 = camera.global_position
 		var endpoint: Vector3 = origin + aim.normalized() * 100.0
 		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(origin, endpoint)
@@ -249,6 +316,59 @@ func shoot() -> void:
 		hit_time = 0.23
 	update_hud()
 
+func _melee_attack(damage: int, reach: float) -> void:
+	if health <= 0:
+		return
+	cooldown = FIRE_INTERVALS[wid]
+	recoil_amount = 0.45
+	viewmodel.call("fire")
+	var origin: Vector3 = camera.global_position
+	var forward: Vector3 = -camera.global_basis.z
+	var shape_query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
+	var swing_shape: SphereShape3D = SphereShape3D.new()
+	swing_shape.radius = 0.32 if wid == 5 else 0.48
+	shape_query.shape = swing_shape
+	shape_query.transform = Transform3D(Basis.IDENTITY, origin + forward * reach * 0.55)
+	shape_query.exclude = [get_rid()]
+	var overlaps: Array[Dictionary] = get_world_3d().direct_space_state.intersect_shape(shape_query, 8)
+	var nearest: Node3D = null
+	var nearest_distance: float = reach + 1.0
+	for overlap: Dictionary in overlaps:
+		var candidate: Node3D = overlap["collider"] as Node3D
+		if candidate == null or not candidate.is_in_group("enemies"):
+			continue
+		var candidate_distance: float = origin.distance_to(candidate.global_position + Vector3(0.0, 1.0, 0.0))
+		if candidate_distance < nearest_distance:
+			nearest = candidate
+			nearest_distance = candidate_distance
+	if nearest != null and nearest.has_method("take_damage"):
+		nearest.call("take_damage", damage)
+		if hud != null:
+			hud.call("set_hit", true)
+			hit_marker.visible = true
+			hit_time = 0.23
+	update_hud()
+
+func _fire_grenade_launcher() -> void:
+	if ammunition[wid] <= 0:
+		reload_weapon()
+		return
+	ammunition[wid] -= 1
+	cooldown = FIRE_INTERVALS[wid]
+	recoil_amount = 0.8
+	viewmodel.call("fire")
+	var grenade: RigidBody3D = RigidBody3D.new()
+	grenade.set_script(GRENADE_SCRIPT)
+	grenade.set("blast_radius", 3.8)
+	grenade.set("max_damage", 55)
+	grenade.set("fuse", 1.3)
+	get_tree().current_scene.add_child(grenade)
+	grenade.global_position = camera.global_position - camera.global_basis.z * 0.9
+	grenade.add_collision_exception_with(self)
+	var launch_dir: Vector3 = (-camera.global_basis.z + Vector3.UP * 0.18).normalized()
+	grenade.call("launch", launch_dir * 22.0)
+	update_hud()
+
 func spawn_tracer(origin: Vector3, endpoint: Vector3) -> void:
 	var tracer: MeshInstance3D = MeshInstance3D.new()
 	tracer.set_script(TRACER_SCRIPT)
@@ -268,6 +388,8 @@ func select_weapon(index: int) -> void:
 	selected_weapon = index
 	wid = GameConfig.weapon_slots[index]
 	reloading_for = 0.0
+	burst_shots_left = 0
+	burst_timer = 0.0
 	aiming = false
 	viewmodel.call("build_weapon", wid)
 	update_hud()
@@ -288,6 +410,7 @@ func throw_grenade() -> void:
 	grenade.set_script(GRENADE_SCRIPT)
 	get_tree().current_scene.add_child(grenade)
 	grenade.global_position = camera.global_position - camera.global_basis.z * 0.7
+	grenade.add_collision_exception_with(self)
 	var dir: Vector3 = -camera.global_basis.z
 	grenade.call("launch", dir * THROW_SPEED + Vector3(0.0, 3.2, 0.0))
 

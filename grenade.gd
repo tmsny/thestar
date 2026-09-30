@@ -8,13 +8,15 @@ const FUSE: float = 2.4
 const RADIUS: float = 6.5
 const MAX_DAMAGE: int = 90
 
+@export var blast_radius: float = RADIUS
+@export var max_damage: int = MAX_DAMAGE
 var fuse: float = FUSE
 var exploded: bool = false
 
 func _ready() -> void:
 	add_to_group("grenades")
 	collision_layer = 1
-	collision_mask = 1
+	collision_mask = 3
 	gravity_scale = 1.15
 	continuous_cd = true
 	_build()
@@ -72,9 +74,9 @@ func explode() -> void:
 			continue
 		var center: Vector3 = e.global_position + Vector3(0.0, 1.0, 0.0)
 		var d: float = origin.distance_to(center)
-		if d <= RADIUS and e.has_method("take_damage"):
-			var falloff: float = 1.0 - d / RADIUS
-			var dmg: int = maxi(1, int(round(float(MAX_DAMAGE) * falloff)))
+		if d <= blast_radius and e.has_method("take_damage"):
+			var falloff: float = 1.0 - d / blast_radius
+			var dmg: int = maxi(1, int(round(float(max_damage) * falloff)))
 			e.call("take_damage", dmg)
 	_blast(origin)
 	queue_free()

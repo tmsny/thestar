@@ -14,6 +14,7 @@ var material_accent: StandardMaterial3D
 var flash_sprite: MeshInstance3D
 var flash_timer: float = 0.0
 var flash_scale_tween: Tween
+var melee_swing: float = 0.0
 
 func _ready() -> void:
 	position = Vector3(0.30, -0.28, -0.78)
@@ -49,7 +50,7 @@ func _ready() -> void:
 	build_weapon(0)
 
 func build_weapon(index: int) -> void:
-	weapon_index = clampi(index, 0, 3)
+	weapon_index = clampi(index, 0, 9)
 	for child: Node in parts.get_children():
 		child.queue_free()
 	var dark: StandardMaterial3D = material_dark
@@ -107,20 +108,76 @@ func build_weapon(index: int) -> void:
 		_cylinder("BipodL", 0.012, 0.30, Vector3(-0.09, -0.14, -0.80), metal)
 		_cylinder("BipodR", 0.012, 0.30, Vector3(0.09, -0.14, -0.80), metal)
 		_box("SightFront", Vector3(0.03, 0.05, 0.03), Vector3(0.0, 0.07, -1.16), dark)
+	elif weapon_index == 3:
+		_build_shotgun(dark, metal, grip, accent)
+	elif weapon_index == 4:
+		_build_energy_pistol(dark, metal, grip, accent)
+	elif weapon_index == 5:
+		_build_knife(dark, metal, grip, accent)
+	elif weapon_index == 6:
+		_build_burst_smg(dark, metal, grip, accent)
+	elif weapon_index == 7:
+		_build_hand_cannon(dark, metal, grip, accent)
+	elif weapon_index == 8:
+		_build_hammer(dark, metal, grip, accent)
 	else:
-		_box("Receiver", Vector3(0.24, 0.18, 0.42), Vector3(0.0, 0.0, 0.18), dark)
-		_cylinder("ShotgunBarrel", 0.055, 1.05, Vector3(0.0, 0.02, -0.53), metal)
-		_cylinder("MuzzleRing", 0.072, 0.08, Vector3(0.0, 0.02, -1.08), accent)
-		_cylinder("MagazineTube", 0.038, 0.83, Vector3(0.0, -0.1, -0.51), dark)
-		_box("Pump", Vector3(0.2, 0.17, 0.34), Vector3(0.0, -0.015, -0.43), grip)
-		_box("PumpGrooveA", Vector3(0.012, 0.14, 0.26), Vector3(-0.103, -0.015, -0.43), metal)
-		_box("PumpGrooveB", Vector3(0.012, 0.14, 0.26), Vector3(0.103, -0.015, -0.43), metal)
-		_box("ShellCarrier", Vector3(0.08, 0.13, 0.14), Vector3(0.13, -0.09, 0.17), accent)
-		_box("Stock", Vector3(0.19, 0.17, 0.42), Vector3(0.0, 0.015, 0.58), grip)
-		_box("StockPad", Vector3(0.20, 0.17, 0.05), Vector3(0.0, 0.015, 0.80), dark)
-		_box("PistolGrip", Vector3(0.15, 0.25, 0.17), Vector3(0.0, -0.2, 0.31), grip, Vector3(-0.2, 0.0, 0.0))
-		_box("TriggerGuard", Vector3(0.12, 0.09, 0.14), Vector3(0.0, -0.12, 0.20), metal)
-		_box("Sight", Vector3(0.05, 0.06, 0.06), Vector3(0.0, 0.12, -0.83), accent)
+		_build_grenade_launcher(dark, metal, grip, accent)
+
+func _build_shotgun(dark: StandardMaterial3D, metal: StandardMaterial3D, grip: StandardMaterial3D, accent: StandardMaterial3D) -> void:
+	_box("Receiver", Vector3(0.24, 0.18, 0.42), Vector3(0.0, 0.0, 0.18), dark)
+	_cylinder("ShotgunBarrel", 0.055, 1.05, Vector3(0.0, 0.02, -0.53), metal)
+	_cylinder("MuzzleRing", 0.072, 0.08, Vector3(0.0, 0.02, -1.08), accent)
+	_cylinder("MagazineTube", 0.038, 0.83, Vector3(0.0, -0.1, -0.51), dark)
+	_box("Pump", Vector3(0.2, 0.17, 0.34), Vector3(0.0, -0.015, -0.43), grip)
+	_box("PumpGrooveA", Vector3(0.012, 0.14, 0.26), Vector3(-0.103, -0.015, -0.43), metal)
+	_box("PumpGrooveB", Vector3(0.012, 0.14, 0.26), Vector3(0.103, -0.015, -0.43), metal)
+	_box("ShellCarrier", Vector3(0.08, 0.13, 0.14), Vector3(0.13, -0.09, 0.17), accent)
+	_box("Stock", Vector3(0.19, 0.17, 0.42), Vector3(0.0, 0.015, 0.58), grip)
+	_box("StockPad", Vector3(0.20, 0.17, 0.05), Vector3(0.0, 0.015, 0.80), dark)
+	_box("PistolGrip", Vector3(0.15, 0.25, 0.17), Vector3(0.0, -0.2, 0.31), grip, Vector3(-0.2, 0.0, 0.0))
+	_box("TriggerGuard", Vector3(0.12, 0.09, 0.14), Vector3(0.0, -0.12, 0.20), metal)
+	_box("Sight", Vector3(0.05, 0.06, 0.06), Vector3(0.0, 0.12, -0.83), accent)
+
+func _build_energy_pistol(dark: StandardMaterial3D, metal: StandardMaterial3D, grip: StandardMaterial3D, accent: StandardMaterial3D) -> void:
+	_box("EnergyBody", Vector3(0.26, 0.18, 0.42), Vector3(0.0, 0.02, -0.12), dark)
+	_box("EnergyCore", Vector3(0.11, 0.09, 0.25), Vector3(0.0, 0.04, -0.30), accent)
+	_cylinder("EnergyEmitter", 0.065, 0.12, Vector3(0.0, 0.02, -0.44), metal)
+	_box("EnergyGrip", Vector3(0.16, 0.30, 0.17), Vector3(0.0, -0.20, 0.02), grip, Vector3(-0.2, 0.0, 0.0))
+	_box("EnergyCell", Vector3(0.10, 0.20, 0.08), Vector3(0.0, -0.12, -0.04), accent)
+
+func _build_knife(dark: StandardMaterial3D, metal: StandardMaterial3D, grip: StandardMaterial3D, accent: StandardMaterial3D) -> void:
+	_box("KnifeGrip", Vector3(0.13, 0.12, 0.44), Vector3(0.0, -0.10, 0.14), grip)
+	_box("KnifePommel", Vector3(0.16, 0.14, 0.08), Vector3(0.0, -0.10, 0.39), accent)
+	_box("KnifeGuard", Vector3(0.30, 0.07, 0.10), Vector3(0.0, -0.03, -0.06), dark)
+	_box("KnifeBlade", Vector3(0.11, 0.055, 0.62), Vector3(0.0, 0.01, -0.40), metal)
+
+func _build_burst_smg(dark: StandardMaterial3D, metal: StandardMaterial3D, grip: StandardMaterial3D, accent: StandardMaterial3D) -> void:
+	_box("BurstReceiver", Vector3(0.23, 0.17, 0.46), Vector3(0.0, 0.02, 0.02), dark)
+	_cylinder("BurstBarrel", 0.032, 0.58, Vector3(0.0, 0.02, -0.48), metal)
+	_box("BurstHandguard", Vector3(0.17, 0.13, 0.31), Vector3(0.0, 0.0, -0.36), grip)
+	_box("BurstMag", Vector3(0.14, 0.28, 0.16), Vector3(0.0, -0.20, -0.02), dark, Vector3(-0.15, 0.0, 0.0))
+	_box("BurstStock", Vector3(0.15, 0.13, 0.38), Vector3(0.0, 0.04, 0.42), grip)
+	_box("BurstSight", Vector3(0.1, 0.08, 0.14), Vector3(0.0, 0.14, -0.06), accent)
+
+func _build_hand_cannon(dark: StandardMaterial3D, metal: StandardMaterial3D, grip: StandardMaterial3D, accent: StandardMaterial3D) -> void:
+	_box("CannonBody", Vector3(0.25, 0.19, 0.35), Vector3(0.0, 0.03, -0.10), dark)
+	_cylinder("CannonBarrel", 0.065, 0.54, Vector3(0.0, 0.03, -0.46), metal)
+	_cylinder("CannonMuzzle", 0.075, 0.07, Vector3(0.0, 0.03, -0.75), accent)
+	_cylinder("CannonCylinder", 0.105, 0.25, Vector3(0.0, 0.03, 0.08), metal)
+	_box("CannonGrip", Vector3(0.16, 0.30, 0.18), Vector3(0.0, -0.20, 0.19), grip, Vector3(-0.2, 0.0, 0.0))
+
+func _build_hammer(dark: StandardMaterial3D, metal: StandardMaterial3D, grip: StandardMaterial3D, accent: StandardMaterial3D) -> void:
+	_box("HammerHandle", Vector3(0.09, 0.10, 0.96), Vector3(0.0, -0.05, 0.12), grip)
+	_box("HammerHead", Vector3(0.56, 0.34, 0.34), Vector3(0.0, 0.02, -0.44), metal)
+	_box("HammerCore", Vector3(0.28, 0.20, 0.10), Vector3(0.0, 0.02, -0.62), accent)
+	_box("HammerPommel", Vector3(0.16, 0.16, 0.10), Vector3(0.0, -0.05, 0.64), dark)
+
+func _build_grenade_launcher(dark: StandardMaterial3D, metal: StandardMaterial3D, grip: StandardMaterial3D, accent: StandardMaterial3D) -> void:
+	_box("LauncherReceiver", Vector3(0.24, 0.20, 0.44), Vector3(0.0, 0.0, 0.02), dark)
+	_cylinder("LauncherTube", 0.105, 0.78, Vector3(0.0, 0.02, -0.52), metal)
+	_cylinder("LauncherMuzzle", 0.13, 0.09, Vector3(0.0, 0.02, -0.94), accent)
+	_box("LauncherGrip", Vector3(0.15, 0.26, 0.17), Vector3(0.0, -0.20, 0.14), grip)
+	_box("LauncherSight", Vector3(0.08, 0.12, 0.12), Vector3(0.0, 0.17, -0.25), accent)
 
 func set_motion(phase: float, recoil: float) -> void:
 	bob_phase = phase
@@ -135,6 +192,11 @@ func add_look(dx: float, dy: float) -> void:
 
 func fire() -> void:
 	recoil_amount = 1.0
+	if weapon_index == 5 or weapon_index == 8:
+		melee_swing = 1.0
+		return
+	if weapon_index == 9:
+		return
 	var gain: float = [1.0, 1.0, 1.75, 1.55][weapon_index]
 	flash_light.light_energy = 7.0 * gain
 	flash_sprite.visible = true
@@ -168,6 +230,7 @@ func _process(delta: float) -> void:
 			flash_sprite.visible = false
 			flash_light.light_energy = 0.0
 	recoil_amount = move_toward(recoil_amount, 0.0, delta * 5.0)
+	melee_swing = move_toward(melee_swing, 0.0, delta * 5.0)
 	bob_phase += delta * 8.0
 	sway = sway.lerp(Vector2.ZERO, clampf(delta * 9.0, 0.0, 1.0))
 	var sway_scale: float = 1.0 - 0.55 * aim_blend
@@ -178,6 +241,12 @@ func _process(delta: float) -> void:
 	rotation.z = -sway.x * 0.8 * sway_scale
 	var aim_scale: float = 0.30 if weapon_index == 2 else 0.60
 	scale = Vector3.ONE * lerpf(0.74, aim_scale, aim_blend)
+	if weapon_index == 5:
+		position = position + Vector3(0.15, 0.04, -0.08) * melee_swing
+		rotation.x = -0.9 * melee_swing
+	elif weapon_index == 8:
+		position = position + Vector3(-0.16, -0.12, -0.18) * melee_swing
+		rotation.x = 0.9 * melee_swing
 
 func _box(part_name: String, dimensions: Vector3, local_pos: Vector3, material: Material, local_rot: Vector3 = Vector3.ZERO) -> void:
 	var mesh_node: MeshInstance3D = MeshInstance3D.new()

@@ -5,6 +5,12 @@ const WEAPON_ICONS: Array[String] = [
 	"res://assets/generated/weapon_icon_rifle.png",
 	"res://assets/generated/weapon_icon_sniper.png",
 	"res://assets/generated/weapon_icon_shotgun.png",
+	"res://assets/generated/weapon_icon_energy.png",
+	"res://assets/generated/weapon_icon_knife.png",
+	"res://assets/generated/weapon_icon_burst_smg.png",
+	"res://assets/generated/weapon_icon_hand_cannon.png",
+	"res://assets/generated/weapon_icon_hammer.png",
+	"res://assets/generated/weapon_icon_grenade_launcher.png",
 ]
 const ICON_ACTIVE_BG: Color = Color(0.05, 0.15, 0.16, 0.92)
 const ICON_IDLE_BG: Color = Color(0.02, 0.04, 0.05, 0.72)
@@ -32,8 +38,8 @@ var weapon_icons: Array[TextureRect] = []
 var weapon_styles: Array[StyleBoxFlat] = []
 
 func _ready() -> void:
-	_build_weapon_bar()
 	_build_scope()
+	_build_weapon_bar()
 	_build_grenades()
 	set_weapon_slot(0)
 
@@ -44,18 +50,18 @@ func _build_weapon_bar() -> void:
 	bar.anchor_right = 1.0
 	bar.anchor_top = 1.0
 	bar.anchor_bottom = 1.0
-	bar.offset_left = -430.0
+	bar.offset_left = -float(GameConfig.weapon_slots.size()) * 72.0 - 22.0
 	bar.offset_right = -22.0
-	bar.offset_top = -110.0
-	bar.offset_bottom = -22.0
+	bar.offset_top = -82.0
+	bar.offset_bottom = -18.0
 	bar.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	bar.alignment = BoxContainer.ALIGNMENT_END
 	bar.add_theme_constant_override("separation", 10)
 	add_child(bar)
-	for i: int in range(WEAPON_ICONS.size()):
+	for i: int in range(GameConfig.weapon_slots.size()):
 		var frame: PanelContainer = PanelContainer.new()
-		frame.custom_minimum_size = Vector2(90.0, 78.0)
+		frame.custom_minimum_size = Vector2(66.0, 58.0)
 		var style: StyleBoxFlat = StyleBoxFlat.new()
 		style.set_border_width_all(2)
 		style.set_corner_radius_all(8)
@@ -67,8 +73,9 @@ func _build_weapon_bar() -> void:
 		var column: VBoxContainer = VBoxContainer.new()
 		column.add_theme_constant_override("separation", 1)
 		var icon: TextureRect = TextureRect.new()
-		icon.texture = load(WEAPON_ICONS[i])
-		icon.custom_minimum_size = Vector2(66.0, 42.0)
+		var weapon_id: int = GameConfig.weapon_slots[i]
+		icon.texture = load(WEAPON_ICONS[weapon_id])
+		icon.custom_minimum_size = Vector2(48.0, 34.0)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -124,6 +131,9 @@ func _build_scope() -> void:
 	scope_rect.material = mat
 	scope_rect.visible = false
 	add_child(scope_rect)
+	# Keep the scope overlay behind every other HUD element so the health bar,
+	# ammo panel and weapon icons stay readable while aiming down the scope.
+	move_child(scope_rect, 0)
 
 func set_scope(active: bool) -> void:
 	if scope_rect == null:
