@@ -3,6 +3,8 @@ extends Node3D
 var weapon_index: int = 0
 var recoil_amount: float = 0.0
 var bob_phase: float = 0.0
+var aim_blend: float = 0.0
+var sway: Vector2 = Vector2.ZERO
 var parts: Node3D
 var flash_light: OmniLight3D
 var material_dark: StandardMaterial3D
@@ -47,7 +49,7 @@ func _ready() -> void:
 	build_weapon(0)
 
 func build_weapon(index: int) -> void:
-	weapon_index = clampi(index, 0, 2)
+	weapon_index = clampi(index, 0, 3)
 	for child: Node in parts.get_children():
 		child.queue_free()
 	var dark: StandardMaterial3D = material_dark
@@ -84,6 +86,27 @@ func build_weapon(index: int) -> void:
 		_box("StockPad", Vector3(0.19, 0.16, 0.045), Vector3(0.0, 0.015, 0.65), dark)
 		_box("Optic", Vector3(0.11, 0.11, 0.17), Vector3(0.0, 0.2, 0.02), accent)
 		_box("SightFront", Vector3(0.035, 0.07, 0.035), Vector3(0.0, 0.13, -0.79), metal)
+	elif weapon_index == 2:
+		_box("Receiver", Vector3(0.20, 0.16, 0.46), Vector3(0.0, 0.0, 0.08), dark)
+		_box("UpperRail", Vector3(0.14, 0.05, 0.40), Vector3(0.0, 0.10, 0.0), metal)
+		_cylinder("LongBarrel", 0.026, 1.05, Vector3(0.0, 0.02, -0.72), metal)
+		_cylinder("MuzzleBrake", 0.045, 0.12, Vector3(0.0, 0.02, -1.30), dark)
+		_box("Handguard", Vector3(0.14, 0.12, 0.34), Vector3(0.0, -0.01, -0.42), grip)
+		_box("Magazine", Vector3(0.12, 0.24, 0.16), Vector3(0.0, -0.20, 0.02), dark)
+		_box("PistolGrip", Vector3(0.13, 0.24, 0.15), Vector3(0.0, -0.19, 0.22), grip, Vector3(-0.22, 0.0, 0.0))
+		_box("TriggerGuard", Vector3(0.11, 0.08, 0.13), Vector3(0.0, -0.11, 0.12), metal)
+		_box("Trigger", Vector3(0.022, 0.055, 0.028), Vector3(0.0, -0.10, 0.08), accent)
+		_box("Stock", Vector3(0.16, 0.14, 0.50), Vector3(0.0, 0.02, 0.50), grip)
+		_box("StockPad", Vector3(0.17, 0.15, 0.05), Vector3(0.0, 0.02, 0.76), dark)
+		_box("CheekRest", Vector3(0.13, 0.06, 0.24), Vector3(0.0, 0.11, 0.44), dark)
+		_cylinder("ScopeTube", 0.045, 0.34, Vector3(0.0, 0.20, 0.02), dark)
+		_cylinder("ScopeFront", 0.058, 0.06, Vector3(0.0, 0.20, -0.16), metal)
+		_cylinder("ScopeRear", 0.058, 0.06, Vector3(0.0, 0.20, 0.20), metal)
+		_box("ScopeMountA", Vector3(0.05, 0.08, 0.05), Vector3(0.0, 0.14, -0.06), metal)
+		_box("ScopeMountB", Vector3(0.05, 0.08, 0.05), Vector3(0.0, 0.14, 0.10), metal)
+		_cylinder("BipodL", 0.012, 0.30, Vector3(-0.09, -0.14, -0.80), metal)
+		_cylinder("BipodR", 0.012, 0.30, Vector3(0.09, -0.14, -0.80), metal)
+		_box("SightFront", Vector3(0.03, 0.05, 0.03), Vector3(0.0, 0.07, -1.16), dark)
 	else:
 		_box("Receiver", Vector3(0.24, 0.18, 0.42), Vector3(0.0, 0.0, 0.18), dark)
 		_cylinder("ShotgunBarrel", 0.055, 1.05, Vector3(0.0, 0.02, -0.53), metal)
@@ -103,16 +126,40 @@ func set_motion(phase: float, recoil: float) -> void:
 	bob_phase = phase
 	recoil_amount = maxf(recoil_amount, recoil)
 
+func set_aim(blend: float) -> void:
+	aim_blend = clampf(blend, 0.0, 1.0)
+
+func add_look(dx: float, dy: float) -> void:
+	sway.x = clampf(sway.x + dx * 0.0018, -0.06, 0.06)
+	sway.y = clampf(sway.y + dy * 0.0018, -0.06, 0.06)
+
 func fire() -> void:
 	recoil_amount = 1.0
-	flash_light.light_energy = 7.0
+	var gain: float = [1.0, 1.0, 1.75, 1.55][weapon_index]
+	flash_light.light_energy = 7.0 * gain
 	flash_sprite.visible = true
-	flash_sprite.scale = Vector3(1.0, 1.0, 1.0)
+	flash_sprite.scale = Vector3.ONE * gain
 	flash_timer = 0.14
 	if flash_scale_tween != null and flash_scale_tween.is_running():
 		flash_scale_tween.kill()
 	flash_scale_tween = create_tween()
-	flash_scale_tween.tween_property(flash_sprite, "scale", Vector3(1.7, 1.7, 1.7), 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	flash_scale_tween.tween_property(flash_sprite, "scale", Vector3.ONE * gain * 1.7, 0.12).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_eject_casing()
+
+func _eject_casing() -> void:
+	var mesh: MeshInstance3D = MeshInstance3D.new()
+	var box: BoxMesh = BoxMesh.new()
+	box.size = Vector3(0.018, 0.018, 0.05)
+	mesh.mesh = box
+	mesh.material_override = _material(Color(0.82, 0.62, 0.2), 0.9, 0.3)
+	mesh.position = Vector3(0.07, 0.02, -0.22)
+	add_child(mesh)
+	var target: Vector3 = Vector3(0.3, -0.14, -0.1)
+	var spin: Vector3 = Vector3(randf_range(-7.0, 7.0), randf_range(-7.0, 7.0), randf_range(-7.0, 7.0))
+	var casing_tween: Tween = create_tween()
+	casing_tween.tween_property(mesh, "position", target, 0.45).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	casing_tween.parallel().tween_property(mesh, "rotation", spin, 0.45)
+	casing_tween.tween_callback(mesh.queue_free)
 
 func _process(delta: float) -> void:
 	if flash_timer > 0.0:
@@ -122,8 +169,15 @@ func _process(delta: float) -> void:
 			flash_light.light_energy = 0.0
 	recoil_amount = move_toward(recoil_amount, 0.0, delta * 5.0)
 	bob_phase += delta * 8.0
-	position.y = -0.29 + sin(bob_phase) * 0.006 - recoil_amount * 0.055
-	rotation.x = recoil_amount * 0.035
+	sway = sway.lerp(Vector2.ZERO, clampf(delta * 9.0, 0.0, 1.0))
+	var sway_scale: float = 1.0 - 0.55 * aim_blend
+	position.x = lerpf(0.30, 0.06, aim_blend) + sway.x * sway_scale
+	position.z = lerpf(-0.78, -0.60, aim_blend)
+	position.y = lerpf(-0.29, -0.235, aim_blend) + sin(bob_phase) * 0.006 - recoil_amount * 0.055 * (1.0 - 0.4 * aim_blend) + sway.y * sway_scale
+	rotation.x = recoil_amount * 0.035 * (1.0 - 0.45 * aim_blend)
+	rotation.z = -sway.x * 0.8 * sway_scale
+	var aim_scale: float = 0.30 if weapon_index == 2 else 0.60
+	scale = Vector3.ONE * lerpf(0.74, aim_scale, aim_blend)
 
 func _box(part_name: String, dimensions: Vector3, local_pos: Vector3, material: Material, local_rot: Vector3 = Vector3.ZERO) -> void:
 	var mesh_node: MeshInstance3D = MeshInstance3D.new()

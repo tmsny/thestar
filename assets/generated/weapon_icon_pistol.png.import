@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b2a6o5e6tkddw"
-path="res://.godot/imported/viewmodel_rifle.png-6e1b8c4020b1a4c09eaec49ed75423da.ctex"
+uid="uid://bdww7loudkjax"
+path="res://.godot/imported/weapon_icon_pistol.png-7de7e89dc01b08d4b1d6a68775fbc124.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/generated/viewmodel_rifle.png"
-dest_files=["res://.godot/imported/viewmodel_rifle.png-6e1b8c4020b1a4c09eaec49ed75423da.ctex"]
+source_file="res://assets/generated/weapon_icon_pistol.png"
+dest_files=["res://.godot/imported/weapon_icon_pistol.png-7de7e89dc01b08d4b1d6a68775fbc124.ctex"]
 
 [params]
 

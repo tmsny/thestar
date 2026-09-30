@@ -158,6 +158,21 @@ text = "RELOADING"
 theme_override_colors/font_color = Color(1, 0.71, 0.27, 1)
 theme_override_font_sizes/font_size = 11
 
+[node name="StatusText" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -320.0
+offset_top = 140.0
+offset_right = 320.0
+offset_bottom = 190.0
+grow_horizontal = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(1, 0.35, 0.25, 1)
+theme_override_font_sizes/font_size = 22
+
 [node name="Controls" type="Label" parent="."]
 layout_mode = 1
 anchors_preset = 0
@@ -165,10 +180,11 @@ anchor_left = 0.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 300.0
-offset_top = -38.0
-offset_right = -300.0
+offset_left = 240.0
+offset_top = -20.0
+offset_right = -240.0
+offset_bottom = -2.0
 horizontal_alignment = 1
-text = "WASD  MOVE     SPACE  JUMP     LMB  FIRE     1–3  WEAPONS     R  RELOAD"
+text = "WASD BEWEGEN   SPACE SPRUNG   W LEITER KLETTERN   LMB FEUERN   RMB ZIELEN   1–4 WAFFEN   R NACHLADEN   G GRANATE"
 theme_override_colors/font_color = Color(0.82, 0.87, 0.88, 0.85)
 theme_override_font_sizes/font_size = 12
