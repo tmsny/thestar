@@ -249,12 +249,12 @@ func _equip_to_slot(slot: int) -> void:
 		return
 	if GameConfig.weapon_slots.size() != 4:
 		GameConfig.weapon_slots = [0, 1, 2, 3]
-	var duplicate: int = GameConfig.weapon_slots.find(_selected)
-	if duplicate == slot:
+	var existing_slot: int = GameConfig.weapon_slots.find(_selected)
+	if existing_slot == slot:
 		return
-	if duplicate >= 0:
+	if existing_slot >= 0:
 		# Tauschen, damit keine Waffe doppelt belegt ist.
-		GameConfig.weapon_slots[duplicate] = GameConfig.weapon_slots[slot]
+		GameConfig.weapon_slots[existing_slot] = GameConfig.weapon_slots[slot]
 	GameConfig.weapon_slots[slot] = _selected
 	GameConfig.save_config()
 	_refresh_slots()

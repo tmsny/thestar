@@ -106,7 +106,7 @@ func _build() -> void:
 	key_hint.add_theme_font_size_override("font_size", 13)
 	key_hint.add_theme_color_override("font_color", UiTheme.TEXT_MUTED)
 	keys.add_child(key_hint)
-	for action: String in GameConfig.BINDING_ORDER:
+	for action: String in ["move_forward", "move_back", "move_left", "move_right", "jump", "crouch", "reload", "grenade", "slot_1", "slot_2", "slot_3", "slot_4", "fullscreen"]:
 		_add_binding_row(keys, action)
 
 	# --- BILD ---

@@ -12,6 +12,7 @@ const MAX_DAMAGE: int = 90
 @export var max_damage: int = MAX_DAMAGE
 var fuse: float = FUSE
 var exploded: bool = false
+var visual_only: bool = false  # Kopie der Granate des Gegners: nur Anzeige, kein Schaden
 
 func _ready() -> void:
 	add_to_group("grenades")
@@ -69,6 +70,8 @@ func explode() -> void:
 	exploded = true
 	var origin: Vector3 = global_position
 	for node: Node in get_tree().get_nodes_in_group("enemies"):
+		if visual_only:
+			break
 		var e: Node3D = node as Node3D
 		if e == null or not is_instance_valid(e):
 			continue
