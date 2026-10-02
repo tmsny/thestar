@@ -44,6 +44,7 @@ var muzzle: Node3D
 var muzzle_light: OmniLight3D
 var health_fill: MeshInstance3D
 var body_materials: Array[StandardMaterial3D] = []
+@onready var visual: Node3D = get_node_or_null("Visual") as Node3D
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 func _ready() -> void:
@@ -54,7 +55,15 @@ func _ready() -> void:
 	shoot_timer = rng.randf_range(0.5, 1.4)
 	strafe_timer = rng.randf_range(0.6, 1.8)
 	jump_timer = rng.randf_range(1.5, 4.0)
-	_build_body()
+	if visual == null:
+		visual = Node3D.new()
+		visual.name = "Visual"
+		add_child(visual)
+		var runtime_muzzle: Node3D = Node3D.new()
+		runtime_muzzle.name = "Muzzle"
+		runtime_muzzle.position = Vector3(0.0, 1.25, -0.72)
+		visual.add_child(runtime_muzzle)
+	_setup_visual()
 	_build_health_bar()
 	_update_bar()
 	player = get_tree().get_first_node_in_group("player") as Node3D
@@ -275,9 +284,35 @@ func _apply_flash() -> void:
 		material.emission = Color(1.0, 0.2, 0.15)
 		material.emission_energy_multiplier = flash * 3.5
 
-# ------------------------------------------------------------ model build ---
+# ----------------------------------------------------------- visual setup ---
 
-func _build_body() -> void:
+func _setup_visual() -> void:
+	muzzle = visual.get_node("Muzzle") as Node3D
+	muzzle_light = OmniLight3D.new()
+	muzzle_light.light_color = Color(1.0, 0.55, 0.15)
+	muzzle_light.light_energy = 0.0
+	muzzle_light.omni_range = 4.0
+	muzzle.add_child(muzzle_light)
+	body_materials.clear()
+	for node: Node in visual.find_children("*", "MeshInstance3D", true, false):
+		var mesh_node: MeshInstance3D = node as MeshInstance3D
+		var material: StandardMaterial3D = mesh_node.get_active_material(0) as StandardMaterial3D
+		if material != null and not body_materials.has(material):
+			body_materials.append(material)
+	if kind == Kind.RUSHER:
+		var rusher_plate: MeshInstance3D = visual.get_node("ChestPlate") as MeshInstance3D
+		var visor: MeshInstance3D = visual.get_node("Visor") as MeshInstance3D
+		var plate_material: StandardMaterial3D = StandardMaterial3D.new()
+		plate_material.albedo_color = Color(0.95, 0.45, 0.1)
+		plate_material.metallic = 0.3
+		rusher_plate.material_override = plate_material
+		var visor_material: StandardMaterial3D = StandardMaterial3D.new()
+		visor_material.albedo_color = Color(1.0, 0.85, 0.2)
+		visor_material.emission_enabled = true
+		visor_material.emission = Color(1.0, 0.55, 0.05)
+		visor.material_override = visor_material
+		body_materials.append(plate_material)
+		body_materials.append(visor_material)
 	var armor_color: Color = Color(0.17, 0.2, 0.24)
 	var plate_color: Color = Color(0.66, 0.16, 0.12)
 	var accent_color: Color = Color(0.96, 0.4, 0.13)

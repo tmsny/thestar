@@ -1,0 +1,111 @@
+[gd_scene format=3 uid="uid://blppkge3pxqv7"]
+
+[sub_resource type="BoxMesh" id="leg"]
+size = Vector3(0.2, 0.8, 0.22)
+
+[sub_resource type="StandardMaterial3D" id="armor"]
+albedo_color = Color(0.17, 0.2, 0.24, 1)
+metallic = 0.5
+roughness = 0.5
+
+[sub_resource type="BoxMesh" id="torso"]
+size = Vector3(0.58, 0.62, 0.32)
+
+[sub_resource type="BoxMesh" id="chest"]
+size = Vector3(0.5, 0.34, 0.1)
+
+[sub_resource type="StandardMaterial3D" id="plate"]
+albedo_color = Color(0.66, 0.16, 0.12, 1)
+metallic = 0.3
+roughness = 0.45
+
+[sub_resource type="BoxMesh" id="arm"]
+size = Vector3(0.16, 0.62, 0.18)
+
+[sub_resource type="BoxMesh" id="shoulder"]
+size = Vector3(0.22, 0.2, 0.24)
+
+[sub_resource type="SphereMesh" id="head"]
+radius = 0.2
+height = 0.4
+
+[sub_resource type="StandardMaterial3D" id="skin"]
+albedo_color = Color(0.26, 0.29, 0.32, 1)
+metallic = 0.4
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="visor"]
+albedo_color = Color(0.96, 0.4, 0.13, 1)
+emission_enabled = true
+emission = Color(0.96, 0.2, 0.03, 1)
+
+[sub_resource type="BoxMesh" id="gun"]
+size = Vector3(0.12, 0.16, 0.46)
+
+[sub_resource type="StandardMaterial3D" id="dark"]
+albedo_color = Color(0.05, 0.06, 0.07, 1)
+metallic = 0.8
+roughness = 0.3
+
+[node name="EnemyVisual" type="Node3D" unique_id=643289842]
+
+[node name="LegL" type="MeshInstance3D" parent="." unique_id=476082212]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.4, 0)
+mesh = SubResource("leg")
+surface_material_override/0 = SubResource("armor")
+
+[node name="LegR" type="MeshInstance3D" parent="." unique_id=33978586]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 0.4, 0)
+mesh = SubResource("leg")
+surface_material_override/0 = SubResource("armor")
+
+[node name="Torso" type="MeshInstance3D" parent="." unique_id=1873246847]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.14, 0)
+mesh = SubResource("torso")
+surface_material_override/0 = SubResource("armor")
+
+[node name="ChestPlate" type="MeshInstance3D" parent="." unique_id=1625273422]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.22, -0.19)
+mesh = SubResource("chest")
+surface_material_override/0 = SubResource("plate")
+
+[node name="ArmL" type="MeshInstance3D" parent="." unique_id=1941829554]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.37, 1.16, 0)
+mesh = SubResource("arm")
+surface_material_override/0 = SubResource("armor")
+
+[node name="ArmR" type="MeshInstance3D" parent="." unique_id=928864520]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.37, 1.16, 0)
+mesh = SubResource("arm")
+surface_material_override/0 = SubResource("armor")
+
+[node name="ShoulderL" type="MeshInstance3D" parent="." unique_id=1537373611]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35382283, 1.42, 0)
+mesh = SubResource("shoulder")
+surface_material_override/0 = SubResource("plate")
+
+[node name="ShoulderR" type="MeshInstance3D" parent="." unique_id=621710655]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34132054, 1.4279379, -0.00269337)
+mesh = SubResource("shoulder")
+surface_material_override/0 = SubResource("plate")
+
+[node name="Head" type="MeshInstance3D" parent="." unique_id=384731912]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.64, 0)
+mesh = SubResource("head")
+surface_material_override/0 = SubResource("skin")
+
+[node name="Visor" type="MeshInstance3D" parent="." unique_id=675476913]
+transform = Transform3D(0.6, 0, 0, 0, 0.24, 0, 0, 0, 0.6, 0, 1.66, -0.19)
+mesh = SubResource("chest")
+surface_material_override/0 = SubResource("visor")
+
+[node name="GunBody" type="MeshInstance3D" parent="." unique_id=500326569]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 1.02, -0.32)
+mesh = SubResource("gun")
+surface_material_override/0 = SubResource("dark")
+
+[node name="Muzzle" type="Node3D" parent="." unique_id=888173176]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 1.05, -0.82)
+
+[node name="FlashMaterials" type="Node3D" parent="." unique_id=1822963596]
+metadata/material_refs = [SubResource("armor"), SubResource("plate"), SubResource("dark"), SubResource("skin")]

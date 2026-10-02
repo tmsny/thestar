@@ -17,13 +17,15 @@ var flash_scale_tween: Tween
 var melee_swing: float = 0.0
 var throw_anim: float = 0.0
 
+const WEAPON_MODELS: PackedScene = preload("res://weapon_models.tscn")
+
 ## Mündungsfeuer-Stärke pro Waffe (Index = weapon_index, 10 Waffen).
 const FLASH_GAIN: Array[float] = [1.0, 1.0, 1.75, 1.55, 1.2, 1.0, 1.1, 1.6, 1.0, 1.0]
 
 func _ready() -> void:
 	position = Vector3(0.30, -0.28, -0.78)
 	scale = Vector3(0.74, 0.74, 0.74)
-	parts = Node3D.new()
+	parts = WEAPON_MODELS.instantiate() as Node3D
 	parts.name = "Parts"
 	add_child(parts)
 	flash_light = OmniLight3D.new()
@@ -56,7 +58,9 @@ func _ready() -> void:
 func build_weapon(index: int) -> void:
 	weapon_index = clampi(index, 0, 9)
 	for child: Node in parts.get_children():
-		child.queue_free()
+		child.visible = child.name == "Weapon_%02d" % weapon_index
+	if parts.get_child_count() > 0:
+		return
 	var dark: StandardMaterial3D = material_dark
 	var metal: StandardMaterial3D = material_metal
 	var grip: StandardMaterial3D = material_grip
