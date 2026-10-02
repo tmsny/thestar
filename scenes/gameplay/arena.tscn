@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://c2m4yfb6cogot"]
+[gd_scene format=3]
 
-[ext_resource type="Script" uid="uid://b52sc3wg4or5y" path="res://scripts/actors/enemies/enemy_spawner.gd" id="1_ubfh8"]
+[ext_resource type="Script" path="res://scripts/actors/enemies/enemy_spawner.gd" id="1_ubfh8"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_444vf"]
 sky_top_color = Color(0.16, 0.27, 0.44, 1)

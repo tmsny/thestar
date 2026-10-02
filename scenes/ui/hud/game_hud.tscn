@@ -1,14 +1,14 @@
-[gd_scene format=3 uid="uid://bp7wfjulavbv8"]
+[gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" uid="uid://bvitu442j1uex" path="res://scripts/ui/game_hud.gd" id="1_bajmu"]
+[ext_resource type="Script" path="res://scripts/ui/game_hud.gd" id="1_hud"]
 
 [sub_resource type="StyleBoxFlat" id="glass_panel"]
 bg_color = Color(0.018, 0.028, 0.04, 0.78)
+border_color = Color(0.15, 0.72, 0.68, 0.82)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.15, 0.72, 0.68, 0.82)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
@@ -21,7 +21,7 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[node name="HUD" type="Control" unique_id=1896249932]
+[node name="HUD" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -29,126 +29,136 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("1_bajmu")
+script = ExtResource("1_hud")
 
-[node name="Vitals" type="PanelContainer" parent="." unique_id=250090436]
+[node name="Vitals" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("glass_panel")
 layout_mode = 1
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
 offset_left = 22.0
 offset_top = 22.0
 offset_right = 310.0
 offset_bottom = 122.0
-theme_override_styles/panel = SubResource("glass_panel")
 
-[node name="VitalsMargin" type="MarginContainer" parent="Vitals" unique_id=1725162487]
+[node name="VitalsMargin" type="MarginContainer" parent="Vitals"]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 9
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 9
 
-[node name="VitalsColumn" type="VBoxContainer" parent="Vitals/VitalsMargin" unique_id=958721888]
+[node name="VitalsColumn" type="VBoxContainer" parent="Vitals/VitalsMargin"]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="VitalsTitle" type="Label" parent="Vitals/VitalsMargin/VitalsColumn" unique_id=554069744]
+[node name="VitalsTitle" type="Label" parent="Vitals/VitalsMargin/VitalsColumn"]
 layout_mode = 2
+text = "VITALS"
 theme_override_colors/font_color = Color(0.46, 0.84, 0.78, 1)
 theme_override_font_sizes/font_size = 12
-text = "VITALS"
 
-[node name="HealthBar" type="ProgressBar" parent="Vitals/VitalsMargin/VitalsColumn" unique_id=1487879299]
+[node name="HealthBar" type="ProgressBar" parent="Vitals/VitalsMargin/VitalsColumn"]
 custom_minimum_size = Vector2(240, 12)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/background = SubResource("glass_panel")
 theme_override_styles/fill = SubResource("bar_fill")
+theme_override_styles/background = SubResource("glass_panel")
+max_value = 100.0
 show_percentage = false
 
-[node name="HealthNumber" type="Label" parent="Vitals/VitalsMargin/VitalsColumn" unique_id=330955198]
+[node name="HealthNumber" type="Label" parent="Vitals/VitalsMargin/VitalsColumn"]
 layout_mode = 2
+text = "100"
 theme_override_colors/font_color = Color(0.96, 0.97, 0.91, 1)
 theme_override_font_sizes/font_size = 19
-text = "100"
 
-[node name="ScorePanel" type="PanelContainer" parent="." unique_id=1480708611]
+[node name="ScorePanel" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("glass_panel")
 layout_mode = 1
-anchors_preset = 1
+anchors_preset = 0
 anchor_left = 1.0
+anchor_top = 0.0
 anchor_right = 1.0
+anchor_bottom = 0.0
 offset_left = -172.0
 offset_top = 22.0
 offset_right = -22.0
 offset_bottom = 82.0
 grow_horizontal = 0
-theme_override_styles/panel = SubResource("glass_panel")
 
-[node name="ScoreMargin" type="MarginContainer" parent="ScorePanel" unique_id=1468652543]
+[node name="ScoreMargin" type="MarginContainer" parent="ScorePanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 6
 
-[node name="ScoreColumn" type="VBoxContainer" parent="ScorePanel/ScoreMargin" unique_id=880771692]
+[node name="ScoreColumn" type="VBoxContainer" parent="ScorePanel/ScoreMargin"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="ScoreCaption" type="Label" parent="ScorePanel/ScoreMargin/ScoreColumn" unique_id=601193826]
+[node name="ScoreCaption" type="Label" parent="ScorePanel/ScoreMargin/ScoreColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.88, 0.68, 0.31, 1)
-theme_override_font_sizes/font_size = 11
 text = "HITS"
 horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.88, 0.68, 0.31, 1)
+theme_override_font_sizes/font_size = 11
 
-[node name="ScoreNumber" type="Label" parent="ScorePanel/ScoreMargin/ScoreColumn" unique_id=423000008]
+[node name="ScoreNumber" type="Label" parent="ScorePanel/ScoreMargin/ScoreColumn"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.97, 0.97, 0.92, 1)
-theme_override_font_sizes/font_size = 20
 text = "000"
 horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.97, 0.97, 0.92, 1)
+theme_override_font_sizes/font_size = 20
 
-[node name="WeaponPanel" type="PanelContainer" parent="." unique_id=1728821447]
+[node name="WeaponPanel" type="PanelContainer" parent="."]
+theme_override_styles/panel = SubResource("glass_panel")
 layout_mode = 1
-anchors_preset = 2
+anchors_preset = 0
+anchor_left = 0.0
 anchor_top = 1.0
+anchor_right = 0.0
 anchor_bottom = 1.0
 offset_left = 22.0
 offset_top = -112.0
 offset_right = 286.0
 offset_bottom = -22.0
-theme_override_styles/panel = SubResource("glass_panel")
 
-[node name="WeaponMargin" type="MarginContainer" parent="WeaponPanel" unique_id=1816223679]
+[node name="WeaponMargin" type="MarginContainer" parent="WeaponPanel"]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 9
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 9
 
-[node name="WeaponColumn" type="VBoxContainer" parent="WeaponPanel/WeaponMargin" unique_id=817951721]
+[node name="WeaponColumn" type="VBoxContainer" parent="WeaponPanel/WeaponMargin"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="WeaponName" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn" unique_id=273104595]
+[node name="WeaponName" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn"]
 layout_mode = 2
+text = "PISTOLE"
 theme_override_colors/font_color = Color(0.46, 0.84, 0.78, 1)
 theme_override_font_sizes/font_size = 12
-text = "PISTOLE"
 
-[node name="AmmoNumber" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn" unique_id=2094685696]
+[node name="AmmoNumber" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn"]
 layout_mode = 2
+text = "12 / 12"
 theme_override_colors/font_color = Color(0.97, 0.97, 0.92, 1)
 theme_override_font_sizes/font_size = 27
-text = "12 / 12"
 
-[node name="ReloadLabel" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn" unique_id=151551296]
+[node name="ReloadLabel" type="Label" parent="WeaponPanel/WeaponMargin/WeaponColumn"]
 visible = false
 layout_mode = 2
+text = "RELOADING"
 theme_override_colors/font_color = Color(1, 0.71, 0.27, 1)
 theme_override_font_sizes/font_size = 11
-text = "RELOADING"
 
-[node name="StatusText" type="Label" parent="." unique_id=1844386829]
+[node name="StatusText" type="Label" parent="."]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -158,14 +168,15 @@ offset_top = 140.0
 offset_right = 320.0
 offset_bottom = 190.0
 grow_horizontal = 2
-theme_override_colors/font_color = Color(1, 0.35, 0.25, 1)
-theme_override_font_sizes/font_size = 22
 horizontal_alignment = 1
 vertical_alignment = 1
+theme_override_colors/font_color = Color(1, 0.35, 0.25, 1)
+theme_override_font_sizes/font_size = 22
 
-[node name="Controls" type="Label" parent="." unique_id=920804141]
+[node name="Controls" type="Label" parent="."]
 layout_mode = 1
-anchors_preset = 12
+anchors_preset = 0
+anchor_left = 0.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -173,7 +184,7 @@ offset_left = 240.0
 offset_top = -20.0
 offset_right = -240.0
 offset_bottom = -2.0
+horizontal_alignment = 1
+text = "WASD BEWEGEN   SPACE SPRUNG   W LEITER KLETTERN   LMB FEUERN   RMB ZIELEN   1–4 WAFFEN   R NACHLADEN   G GRANATE"
 theme_override_colors/font_color = Color(0.82, 0.87, 0.88, 0.85)
 theme_override_font_sizes/font_size = 12
-text = "WASD BEWEGEN   SPACE SPRUNG   W LEITER KLETTERN   LMB FEUERN   RMB ZIELEN   1–4 WAFFEN   R NACHLADEN   G GRANATE"
-horizontal_alignment = 1

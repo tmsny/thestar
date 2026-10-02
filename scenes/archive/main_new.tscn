@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://bkuglxd6ddrrf"]
+[gd_scene format=3 uid="uid://55h4hsf1cdyk"]
 
-[ext_resource type="PackedScene" uid="uid://dhiwidwmbx6v4" path="res://scenes/gameplay/arena.tscn" id="1_arena"]
+[ext_resource type="PackedScene" path="res://scenes/gameplay/arena.tscn" id="1_arena"]
 [ext_resource type="PackedScene" path="res://scenes/gameplay/player_3d.tscn" id="2_player"]
 
 [node name="FPSGame" type="Node3D" unique_id=2141841706]

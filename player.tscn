@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://d13xglfwt4tby"]
+[gd_scene format=3 uid="uid://0u1ymyx7n7mi"]
 
 [sub_resource type="GDScript" id="GDScript_sh265"]
 script/source = "extends CharacterBody3D

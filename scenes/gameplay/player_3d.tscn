@@ -1,0 +1,36 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/actors/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/weapons/gun_viewmodel.gd" id="2_weapon"]
+[sub_resource type="CapsuleShape3D" id="player_capsule"]
+radius = 0.38
+height = 1.8
+[sub_resource type="StandardMaterial3D" id="flash_material"]
+albedo_color = Color(1, 0.58, 0.16, 1)
+emission_enabled = true
+emission = Color(1, 0.28, 0.04, 1)
+[sub_resource type="BoxShape3D" id="ladder_shape"]
+size = Vector3(1.1, 2.2, 1.1)
+
+[node name="Player" type="CharacterBody3D"]
+script = ExtResource("1_player")
+[node name="BodyCollision" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.9, 0)
+shape = SubResource("player_capsule")
+[node name="LadderSensor" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 8
+monitoring = true
+[node name="LadderShape" type="CollisionShape3D" parent="LadderSensor"]
+position = Vector3(0, 1.1, 0)
+shape = SubResource("ladder_shape")
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 1.58, 0)
+current = true
+[node name="Viewmodel" type="Node3D" parent="Camera3D"]
+script = ExtResource("2_weapon")
+[node name="MuzzleFlash" type="OmniLight3D" parent="Camera3D/Viewmodel"]
+position = Vector3(0, 0.015, -0.9)
+light_color = Color(1, 0.53, 0.12, 1)
+light_energy = 0.0
+omni_range = 3.0
